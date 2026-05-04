@@ -1,0 +1,1869 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control Documentario Integral - SEMA</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #1e3a8a; --secondary: #2563eb; --accent: #0ea5e9;
+            --bg: #f1f5f9; --text: #0f172a; --border: #cbd5e1; --danger: #dc2626;
+            --warning: #f59e0b; --success: #10b981; --gray: #64748b;
+            --contractor-bg: #dbeafe; --contractor-text: #1e40af;
+            --supervision-bg: #fce7f3; --supervision-text: #9d174d;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
+        html, body { height: 100%; padding: 0; background: var(--bg); color: var(--text); font-size: 11px; }
+        
+        .main-nav {
+            background: #0f172a; color: #fff; padding: 10px 20px; display: flex; align-items: center; justify-content: center; gap: 20px;
+            border-bottom: 3px solid var(--secondary); flex-shrink: 0;
+        }
+        .nav-btn {
+            padding: 8px 24px; border: none; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 13px; transition: all 0.2s;
+            background: rgba(255,255,255,0.1); color: #94a3b8;
+        }
+        .nav-btn:hover { background: rgba(255,255,255,0.2); color: #fff; }
+        .nav-btn.active { background: var(--secondary); color: #fff; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.4); }
+
+        .app-view { display: none; height: calc(100vh - 50px); padding: 8px; flex-direction: column; gap: 8px; max-width: 100%; }
+        .app-view.active { display: flex; }
+
+        .app-container { display: flex; flex-direction: column; height: 100%; gap: 8px; max-width: 100%; }
+        
+        .header-top {
+            display: flex; align-items: center; justify-content: space-between;
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+            color: white; padding: 12px 20px; border-radius: 8px; flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2); min-height: 90px; gap: 20px;
+        }
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .logo-pa-container { 
+            width: 220px; height: 65px; background: #fff; border-radius: 8px; 
+            padding: 6px 10px; display: flex; align-items: center; justify-content: center; 
+            flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .logo-pa-container img {
+            width: 100%; height: 100%; display: block;
+            object-fit: contain;
+            object-position: center;
+        }
+        .header-center { flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .header-center h1 { font-size: 20px; margin-bottom: 4px; font-weight: 800; letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.3); width: 100%; }
+        .header-center p { font-size: 11px; opacity: 0.9; font-weight: 500; }
+        #projectTitle { font-size: 10px; color: #cbd5e1; margin-top: 4px; font-weight: 500; letter-spacing: 0.5px; max-width: 90%; line-height: 1.3; }
+        
+        .header-right {
+            display: flex; align-items: center; gap: 15px;
+            background: linear-gradient(135deg, #0a192f 0%, #1e3a8a 100%);
+            padding: 10px 20px; border-radius: 12px; border: 2px solid #3b82f6;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+            flex-shrink: 0; min-width: 320px; position: relative; overflow: hidden;
+        }
+        .header-right::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, transparent, #3b82f6, #60a5fa, #3b82f6, transparent);
+        }
+        .author-avatar {
+            width: 60px; height: 60px; background: linear-gradient(135deg, #3b82f6, #1e40af);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 24px; font-weight: bold; color: #fff; border: 3px solid #60a5fa;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); flex-shrink: 0;
+        }
+        .author-info { text-align: left; flex: 1; }
+        .author-name { font-size: 16px; font-weight: 700; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.5); line-height: 1.2; letter-spacing: 0.3px; }
+        .author-role { font-size: 11px; color: #94a3b8; margin-top: 3px; font-weight: 500; }
+        .tower-logo {
+            width: 50px; height: 50px; flex-shrink: 0; opacity: 0.9;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+            display: block; object-fit: contain; object-position: center;
+        }
+
+        .header-db-actions {
+            display: flex; flex-direction: column; gap: 6px; align-items: flex-end; margin-left: 12px; padding-left: 12px;
+            border-left: 1px solid rgba(96, 165, 250, 0.3);
+        }
+        .btn-header-db {
+            padding: 6px 14px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; font-size: 10px;
+            display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; transition: all 0.2s;
+        }
+        .btn-header-db.guardar { background: linear-gradient(135deg, #10b981, #059669); color: #fff; }
+        .btn-header-db.importar { background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; }
+        .btn-header-db:hover { transform: translateY(-1px); filter: brightness(1.1); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        
+        /* Estilos para el botón de usuario */
+        #userToggleBtn {
+            cursor: pointer; padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 10px;
+            border: 1px solid rgba(255,255,255,0.2); transition: all 0.2s; text-transform: uppercase;
+        }
+        .user-local { background: #475569; color: #cbd5e1; }
+        .user-admin { background: #f59e0b; color: #0f172a; box-shadow: 0 0 8px rgba(245, 158, 11, 0.4); }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; flex-shrink: 0; }
+        .stat-card { background: var(--primary); color: #fff; padding: 8px; border-radius: 4px; text-align: center; cursor: pointer; transition: all 0.2s; }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        .stat-card.active { border: 2px solid var(--warning); }
+        .stat-card h3 { font-size: 18px; margin-bottom: 1px; }
+        .stat-card p { font-size: 9px; }
+        .toolbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px; background: #f8fafc; border-radius: 4px; border: 1px solid var(--border); flex-shrink: 0; }
+        .btn-group { display: flex; gap: 4px; flex-wrap: wrap; }
+        .btn { padding: 5px 8px; border: none; border-radius: 3px; cursor: pointer; font-weight: 600; font-size: 10px; transition: all 0.2s; display: inline-flex; align-items: center; gap: 3px; }
+        .btn-primary { background: var(--secondary); color: #fff; }
+        .btn-success { background: var(--success); color: #fff; }
+        .btn-warning { background: var(--warning); color: #000; }
+        .btn-danger { background: var(--danger); color: #fff; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
+        input[type="file"] { display: none; }
+        .status-bar { display: flex; justify-content: space-between; font-size: 10px; color: #475569; padding: 4px 8px; opacity: 0.85; flex-shrink: 0; }
+        .search-filter-bar { background: #f8fafc; padding: 8px; border-radius: 4px; border: 1px solid var(--border); flex-shrink: 0; }
+        .filter-title { font-weight: 600; color: var(--primary); margin-bottom: 6px; font-size: 10px; text-transform: uppercase; }
+        .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 6px; }
+        .form-control { width: 100%; padding: 4px 6px; border: 1px solid var(--border); border-radius: 3px; font-size: 10px; }
+        .search-input { flex: 1; min-width: 150px; padding: 5px 8px; border: 1px solid var(--border); border-radius: 3px; font-size: 10px; }
+        .table-wrapper { flex: 1; overflow: auto; border: 1px solid var(--border); border-radius: 4px; min-height: 0; position: relative; background: #fff; }
+        .table-wrapper::-webkit-scrollbar { width: 14px; height: 14px; }
+        .table-wrapper::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 7px; }
+        .table-wrapper::-webkit-scrollbar-thumb { background: #888; border-radius: 7px; border: 3px solid #f1f1f1; }
+        .table-wrapper::-webkit-scrollbar-thumb:hover { background: #555; }
+        table { width: 100%; border-collapse: collapse; font-size: 10px; min-width: 2200px; }
+        thead { position: sticky; top: 0; z-index: 10; background: #f1f5f9; }
+        th { padding: 6px 4px; text-align: left; border: 1px solid var(--border); font-weight: 600; white-space: nowrap; font-size: 9px; background: #e2e8f0; }
+        td { padding: 4px 3px; border: 1px solid var(--border); vertical-align: middle; font-size: 10px; white-space: nowrap; }
+        tr:nth-child(even) { background: #fafafa; }
+        tr:hover { background: #e0f2fe; }
+        tr.critico { background: #fee2e2 !important; }
+        .contractor-header { background: var(--contractor-bg) !important; color: var(--contractor-text) !important; font-weight: 700; text-align: center; }
+        .supervision-header { background: var(--supervision-bg) !important; color: var(--supervision-text) !important; font-weight: 700; text-align: center; }
+        .header-gray { background-color: #d1d5db !important; color: #374151 !important; }
+        .col-n-doc { min-width: 120px; white-space: normal; word-break: break-word; overflow: visible; }
+        .badge { padding: 2px 5px; border-radius: 10px; font-size: 8px; font-weight: 600; text-transform: uppercase; display: inline-block; }
+        .badge-si { background: #dcfce7; color: #166534; }
+        .badge-no { background: #fee2e2; color: #991b1b; }
+        .badge-na { background: #f1f5f9; color: #475569; }
+        .badge-lev { background: #dcfce7; color: #166534; }
+        .badge-obs { background: #fef3c7; color: #92400e; }
+        .badge-pend { background: #e0f2fe; color: #0369a1; }
+        .action-btn { padding: 2px 5px; margin: 0 1px; border: 1px solid #ccc; border-radius: 3px; background: #fff; cursor: pointer; font-size: 10px; }
+        .action-btn:hover { background: #e2e8f0; }
+        .link-drive { color: var(--secondary); text-decoration: none; font-weight: 600; }
+        .link-drive:hover { text-decoration: underline; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-content { background: #fff; width: 85%; max-width: 750px; max-height: 85vh; overflow-y: auto; border-radius: 6px; padding: 15px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 2px solid var(--border); }
+        .close { font-size: 18px; cursor: pointer; color: var(--gray); }
+        .close:hover { color: var(--danger); }
+        .form-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 8px; }
+        .form-group { margin-bottom: 6px; }
+        .form-group label { display: block; margin-bottom: 2px; font-weight: 600; font-size: 9px; color: var(--gray); }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 4px; border: 1px solid var(--border); border-radius: 3px; font-size: 10px; }
+        .form-group input[readonly] { background-color: #f1f5f9; cursor: not-allowed; }
+        textarea { resize: vertical; min-height: 40px; }
+        
+        .carta-input-container, .numdoc-input-container { display: flex; gap: 5px; align-items: center; }
+        .carta-segment, .numdoc-segment { 
+            background: #e2e8f0; padding: 4px 8px; border: 1px solid var(--border); 
+            border-radius: 3px; font-weight: 600; font-size: 10px; white-space: nowrap; 
+            color: var(--text); flex-shrink: 0;
+        }
+        .carta-input-segment, .numdoc-input-segment { flex: 1; min-width: 60px; }
+        .carta-year-segment, .numdoc-year-segment { min-width: 75px; }
+        .btn-toggle-carta, .btn-toggle-numdoc { padding: 4px 8px; margin-left: 5px; font-size: 12px; }
+        .manual-input { width: 100%; display: none; margin-top: 5px; }
+
+        .carta-mode-rec { display: flex; flex-direction: column; gap: 8px; margin-top: 2px; }
+        .carta-mode-row { display: flex; align-items: center; gap: 10px; }
+        .carta-mode-row .carta-input-container { flex: 1; min-width: 0; }
+        .carta-manual-full-rec { flex: 1; min-width: 0; width: auto !important; }
+        .carta-mode-check { position: relative; cursor: pointer; flex-shrink: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; }
+        .carta-mode-check input { position: absolute; opacity: 0; width: 0; height: 0; margin: 0; }
+        .carta-mode-check-ui {
+            width: 20px; height: 20px; border: 2px solid #94a3b8; border-radius: 4px; background: #fff;
+            display: flex; align-items: center; justify-content: center; box-sizing: border-box;
+        }
+        .carta-mode-check input:checked + .carta-mode-check-ui { border-color: #1e3a8a; }
+        .carta-mode-check input:checked + .carta-mode-check-ui::after {
+            content: ''; width: 10px; height: 10px; border-radius: 50%; background: #1e3a8a;
+        }
+        .carta-mode-row.is-inactive { opacity: 0.55; }
+
+        /* CLASE PARA OCULTAR ELEMENTOS EN USUARIO LOCAL */
+        .hidden-local { display: none !important; }
+
+        @media print {
+            .main-nav, .toolbar, .search-filter-bar, .btn, .modal, .stats-grid, .status-bar, .header-right { display: none !important; }
+            body, .app-container { background: #fff; padding: 0; height: auto; }
+            .table-wrapper { max-height: none; overflow: visible; }
+            .header-top { background: #fff; color: #000; box-shadow: none; border-bottom: 2px solid #000; }
+        }
+        @media (max-width: 1200px) {
+            .header-top { flex-wrap: wrap; }
+            .header-right { min-width: 100%; order: 3; margin-top: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-nav">
+        <button class="nav-btn active" id="btn-view-enviadas" onclick="switchView('enviadas')">📤 CARTAS ENVIADAS</button>
+        <button class="nav-btn" id="btn-view-recibidas" onclick="switchView('recibidas')">📥 CARTAS RECIBIDAS</button>
+    </div>
+
+    <div id="view-enviadas" class="app-view active">
+        <input type="file" id="dbImportInput-env" accept=".json" style="display:none;">
+        <div class="app-container">
+            <div class="header-top">
+                <div class="header-left">
+                    <div class="logo-pa-container">
+                        <img src="imagenes/logo-pa.jpeg" alt="P.A. Perú - Profesionales Asociados">
+                    </div>
+                </div>
+                <div class="header-center">
+                    <h1>MATRIZ DE CONTROL DE CARTAS - ENVIADAS</h1>
+                    <p>CONTRATISTA: P.A PERÚ S.A.C | SUPERVISIÓN: TERRANDES S.A.C</p>
+                    <p id="projectTitle">CREACIÓN DEL SISTEMA DE SUBTRANSMISIÓN DE LA NUEVA SET MANANTAY 60/22.9/10KV, DISTRITO DE MANANTAY,PROVINCIA DE CORONEL PORTILLO, DEPARTAMENTO DE UCAYALI</p>
+                </div>
+                <div class="header-right">
+                    <img class="tower-logo" src="imagenes/tower-logo.JPG" alt="Torre / línea eléctrica">
+                    <div class="author-avatar">LD</div>
+                    <div class="author-info">
+                        <div class="author-name">Ing. Luis Deybis<br>Aponte Primo</div>
+                        <div class="author-role">Residente de Obra | 2026</div>
+                    </div>
+                    <div class="header-db-actions">
+                        <button id="userToggleBtn" class="user-local" onclick="toggleUser()">👤 Local</button>
+                        <!-- Botones BD marcados para ocultar en local -->
+                        <button class="btn-header-db guardar bd-admin-only" id="btnGuardarBDUnificado" onclick="guardarBDUnificado()">💾 Guardar BD</button>
+                        <button class="btn-header-db importar" id="btnImportarBDUnificado" onclick="document.getElementById('fileImportBDUnificado').click()">📂 Importar BD</button>
+                        <input type="file" id="fileImportBDUnificado" accept=".json" style="display:none" onchange="importarBDUnificado(this)">
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card" onclick="Env.filterByTotal('all')" id="statCardTotal-env"><h3 id="statTotal-env">0</h3><p>Total Cartas</p></div>
+                <div class="stat-card" onclick="Env.filterByTotal('pendientes')" id="statCardPendientes-env" style="background: linear-gradient(135deg, #f59e0b, #d97706);"><h3 id="statPendientes-env">0</h3><p>Pendientes</p></div>
+                <div class="stat-card" onclick="Env.filterByTotal('observadas')" id="statCardObservadas-env" style="background: linear-gradient(135deg, #ef4444, #b91c1c);"><h3 id="statObservadas-env">0</h3><p>Observadas</p></div>
+                <div class="stat-card" onclick="Env.filterByTotal('levantadas')" id="statCardLevantadas-env" style="background: linear-gradient(135deg, #10b981, #047857);"><h3 id="statLevantadas-env">0</h3><p>Levantadas</p></div>
+                <div class="stat-card" onclick="Env.filterByTotal('reenvios')" id="statCardReenvios-env" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);"><h3 id="statReenvios-env">0</h3><p>≥ 3 Reenvíos</p></div>
+            </div>
+
+            <div class="toolbar">
+                <div class="btn-group">
+                    <input type="file" id="excelInput-env" accept=".xlsx, .xls" />
+                    <button id="btnImportExcel-env" class="btn btn-success admin-only" onclick="document.getElementById('excelInput-env').click()">📥 Importar Excel</button>
+                    <button id="btnExportExcel-env" class="btn btn-primary admin-only" onclick="Env.exportExcel()">📤 Exportar Excel</button>
+                    <button class="btn btn-warning admin-only" onclick="Env.openModal()">➕ Nueva</button>
+                    <button class="btn btn-outline" onclick="Env.toggleFilters()">🔽 Filtros</button>
+                </div>
+                <input type="text" class="search-input" id="globalSearch-env" placeholder="🔍 Buscar...">
+            </div>
+            
+            <div class="status-bar">
+                <span id="lastLoaded-env">Última carga: -</span>
+                <span id="lastSaved-env">Último guardado: -</span>
+            </div>
+
+            <div class="search-filter-bar" id="filterPanel-env" style="display:none;">
+                <div class="filter-title">📋 FILTROS DE SEGUIMIENTO</div>
+                <div class="filter-grid">
+                    <div class="form-group"><label>Remitente</label><select id="filterRemitente-env" class="form-control" onchange="Env.applyFilters()"><option value="">Todos</option></select></div>
+                    <div class="form-group"><label>Destinatario</label><select id="filterDestinatario-env" class="form-control" onchange="Env.applyFilters()"><option value="">Todos</option></select></div>
+                    <div class="form-group"><label>Palabra Clave</label><input type="text" id="filterKeyword-env" class="form-control" placeholder="Buscar..." onchange="Env.applyFilters()"></div>
+                    <div class="form-group"><label>Estado</label><select id="filterEstado-env" class="form-control" onchange="Env.applyFilters()"><option value="">Todos</option><option value="Pendiente">Pendiente</option><option value="Observada">Observada</option><option value="Reenviada">Reenviada</option><option value="Levantada">Levantada</option></select></div>
+                    <div class="form-group"><label>Tipo</label><select id="filterTipo-env" class="form-control" onchange="Env.applyFilters()"></select></div>
+                    <div class="form-group"><label>Respuesta</label><select id="filterRespuesta-env" class="form-control" onchange="Env.applyFilters()"><option value="">Todas</option><option value="SI">SI</option><option value="NO">NO</option><option value="NA">NA</option></select></div>
+                    <div class="form-group"><label>Iteración</label><select id="filterIteracion-env" class="form-control" onchange="Env.applyFilters()"><option value="">Todas</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
+                    <div class="form-group"><label>Fecha Desde</label><input type="date" id="filterFechaDesde-env" class="form-control" onchange="Env.applyFilters()"></div>
+                    <div class="form-group"><label>Fecha Hasta</label><input type="date" id="filterFechaHasta-env" class="form-control" onchange="Env.applyFilters()"></div>
+                </div>
+            </div>
+
+            <div class="table-wrapper" id="tableWrapper-env">
+                <table id="dataTable-env">
+                    <thead>
+                        <tr>
+                            <th colspan="9" class="contractor-header">CONTRATISTA - P.A PERÚ S.A.C</th>
+                            <th colspan="10" class="supervision-header">SUPERVISIÓN - TERRANDES S.A.C</th>
+                        </tr>
+                        <tr>
+                            <th>ÍTEM</th><th>N° CARTA</th><th>REMITENTE</th><th>DESTINATARIO</th><th>ASUNTO</th><th>FECHA</th><th>TIPO</th><th>REG. MESA</th><th>RESPUESTA</th>
+                            <th class="col-n-doc">N° DOC.</th><th>FECHA RESP.</th><th>DEMORA</th><th>DEMORA HOY</th><th>ESTADO</th><th>ITERACIÓN</th><th>COMENTARIO</th><th class="header-gray">Carta</th><th class="header-gray">Carpeta</th><th class="header-gray admin-only">ACCIONES</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody-env"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-recibidas" class="app-view">
+        <input type="file" id="dbImportInput-rec" accept=".json" style="display:none;">
+        <div class="app-container">
+            <div class="header-top">
+                <div class="header-left">
+                    <div class="logo-pa-container">
+                        <img src="imagenes/logo-pa.jpeg" alt="P.A. Perú - Profesionales Asociados">
+                    </div>
+                </div>
+                <div class="header-center">
+                    <h1>MATRIZ DE CONTROL DE CARTAS - RECIBIDAS</h1>
+                    <p>SUPERVISIÓN: TERRANDES S.A.C | CONTRATISTA: P.A PERÚ S.A.C</p>
+                    <p id="projectTitle-rec">CREACIÓN DEL SISTEMA DE SUBTRANSMISIÓN DE LA NUEVA SET MANANTAY 60/22.9/10KV, DISTRITO DE MANANTAY,PROVINCIA DE CORONEL PORTILLO, DEPARTAMENTO DE UCAYALI</p>
+                </div>
+                <div class="header-right">
+                    <img class="tower-logo" src="imagenes/tower-logo.JPG" alt="Torre / línea eléctrica">
+                    <div class="author-avatar">LD</div>
+                    <div class="author-info">
+                        <div class="author-name">Ing. Luis Deybis<br>Aponte Primo</div>
+                        <div class="author-role">Residente de Obra | 2026</div>
+                    </div>
+                    <div class="header-db-actions">
+                        <button id="userToggleBtn-rec" class="user-local" onclick="toggleUser()">👤 Local</button>
+                        <!-- Botones BD marcados para ocultar en local -->
+                        <button class="btn-header-db guardar bd-admin-only" id="btnGuardarBDUnificado-rec" onclick="guardarBDUnificado()">💾 Guardar BD</button>
+                        <button class="btn-header-db importar" id="btnImportarBDUnificado-rec" onclick="document.getElementById('fileImportBDUnificado-rec').click()">📂 Importar BD</button>
+                        <input type="file" id="fileImportBDUnificado-rec" accept=".json" style="display:none" onchange="importarBDUnificado(this)">
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card" onclick="Rec.filterByTotal('all')" id="statCardTotal-rec"><h3 id="statTotal-rec">0</h3><p>Total Cartas</p></div>
+                <div class="stat-card" onclick="Rec.filterByTotal('pendientes')" id="statCardPendientes-rec" style="background: linear-gradient(135deg, #f59e0b, #d97706);"><h3 id="statPendientes-rec">0</h3><p>Por Atender</p></div>
+                <div class="stat-card" onclick="Rec.filterByTotal('atendidas')" id="statCardAtendidas-rec" style="background: linear-gradient(135deg, #10b981, #047857);"><h3 id="statAtendidas-rec">0</h3><p>Atendidas</p></div>
+                <div class="stat-card" onclick="Rec.filterByTotal('observadas')" id="statCardObservadas-rec" style="background: linear-gradient(135deg, #ef4444, #b91c1c);"><h3 id="statObservadas-rec">0</h3><p>No Atendidas</p></div>
+                <div class="stat-card" onclick="Rec.filterByTotal('retraso')" id="statCardRetraso-rec" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);"><h3 id="statRetraso-rec">0</h3><p>Con Retraso ≥7 días</p></div>
+            </div>
+
+            <div class="toolbar">
+                <div class="btn-group">
+                    <input type="file" id="excelInput-rec" accept=".xlsx, .xls" />
+                    <button id="btnImportExcel-rec" class="btn btn-success admin-only" onclick="document.getElementById('excelInput-rec').click()">📥 Importar Excel</button>
+                    <button id="btnExportExcel-rec" class="btn btn-primary admin-only" onclick="Rec.exportExcel()">📤 Exportar Excel</button>
+                    <button class="btn btn-warning admin-only" onclick="Rec.openModal()">➕ Nueva</button>
+                    <button class="btn btn-outline" onclick="Rec.toggleFilters()">🔽 Filtros</button>
+                </div>
+                <input type="text" class="search-input" id="globalSearch-rec" placeholder="🔍 Buscar...">
+            </div>
+            
+            <div class="status-bar">
+                <span id="lastLoaded-rec">Última carga: -</span>
+                <span id="lastSaved-rec">Último guardado: -</span>
+            </div>
+
+            <div class="search-filter-bar" id="filterPanel-rec" style="display:none;">
+                <div class="filter-title">📋 FILTROS DE SEGUIMIENTO</div>
+                <div class="filter-grid">
+                    <div class="form-group"><label>Tipo</label><select id="filterTipo-rec" class="form-control" onchange="Rec.applyFilters()"></select></div>
+                    <div class="form-group"><label>Respuesta</label><select id="filterRespuesta-rec" class="form-control" onchange="Rec.applyFilters()"><option value="">Todas</option><option value="SI">SI</option><option value="NO">NO</option><option value="NA">NA</option></select></div>
+                    <div class="form-group"><label>Palabra Clave</label><input type="text" id="filterKeyword-rec" class="form-control" placeholder="Buscar..." onchange="Rec.applyFilters()"></div>
+                    <div class="form-group"><label>Fecha Desde</label><input type="date" id="filterFechaDesde-rec" class="form-control" onchange="Rec.applyFilters()"></div>
+                    <div class="form-group"><label>Fecha Hasta</label><input type="date" id="filterFechaHasta-rec" class="form-control" onchange="Rec.applyFilters()"></div>
+                    <div class="form-group"><label>Responsable</label><select id="filterResponsable-rec" class="form-control" onchange="Rec.applyFilters()"><option value="">Todos</option></select></div>
+                </div>
+            </div>
+
+            <div class="table-wrapper" id="tableWrapper-rec">
+                <table id="dataTable-rec">
+                    <thead>
+                        <tr>
+                            <th colspan="7" class="supervision-header">SUPERVISIÓN - TERRANDES S.A.C</th>
+                            <th colspan="9" class="contractor-header">CONTRATISTA - P.A PERÚ S.A.C</th>
+                        </tr>
+                        <tr>
+                            <th>ÍTEM</th><th>N° CARTA</th><th>ASUNTO</th><th>FECHA</th><th>TIPO</th><th>REFERENCIA</th><th>RESPUESTA</th>
+                            <th class="col-n-doc">N° DOCUMENTO</th><th>FECHA RESP.</th><th>DEMORA</th><th>DEMORA HOY</th><th>COMENTARIO</th><th>RESPONSABLE</th><th>CARTA</th><th>CARPETA</th><th class="header-gray admin-only">ACCIONES</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody-rec"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-env" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h2 id="modalTitle-env">Registrar Carta</h2><span class="close" onclick="Env.closeModal()">&times;</span></div>
+            <form id="cartaForm-env">
+                <input type="hidden" id="editIndex-env">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>N° Carta *</label>
+                        <div id="cartaStructured-env" class="carta-input-container">
+                            <span class="carta-segment">Carta N° PA-MAN-</span>
+                            <select id="fCartaYear-env" class="form-control carta-year-segment">
+                                <option value="2025">2025</option>
+                                <option value="2026">2026</option>
+                                <option value="2027">2027</option>
+                            </select>
+                            <input type="text" id="fCartaNum-env" class="form-control carta-input-segment" placeholder="Nro" required>
+                            <button type="button" class="btn btn-outline btn-sm btn-toggle-carta" id="btnToggleCartaMode-env" title="Editar completo">✏️</button>
+                        </div>
+                        <input type="text" id="fCartaManual-env" class="form-control manual-input" placeholder="N° Carta completo (ej. OFICIO N° 001-2025)">
+                    </div>
+                    <div class="form-group"><label>Fecha *</label><input type="date" id="fFecha-env" class="form-control" required onchange="Env.actualizarDemora()"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Remitente *</label><select id="fRemitente-env" class="form-control" required></select></div>
+                    <div class="form-group"><label>Destinatario *</label><select id="fDestinatario-env" class="form-control" required></select></div>
+                </div>
+                <div class="form-group"><label>Asunto *</label><textarea id="fAsunto-env" class="form-control" required></textarea></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Tipo *</label><select id="fTipo-env" class="form-control" required></select></div>
+                    <div class="form-group"><label>Registro Mesa</label><input type="text" id="fRegistro-env" class="form-control"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Respuesta *</label>
+                        <select id="fRespuesta-env" class="form-control" required onchange="Env.actualizarDemora()"><option value="NA">NA</option><option value="SI">SI</option><option value="NO">NO</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>N° Documento</label>
+                        <div id="numDocStructured-env" class="numdoc-input-container">
+                            <span class="numdoc-segment">Carta N° PA-MAN-</span>
+                            <select id="fNumDocYear-env" class="form-control numdoc-year-segment">
+                                <option value="2025">2025</option>
+                                <option value="2026">2026</option>
+                                <option value="2027">2027</option>
+                            </select>
+                            <input type="text" id="fNumDocNum-env" class="form-control numdoc-input-segment" placeholder="Nro">
+                            <button type="button" class="btn btn-outline btn-sm btn-toggle-numdoc" id="btnToggleNumDocMode-env" title="Editar completo">✏️</button>
+                        </div>
+                        <input type="text" id="fNumDocManual-env" class="form-control manual-input" placeholder="N° Documento completo">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Fecha Respuesta</label><input type="date" id="fFechaResp-env" class="form-control" onchange="Env.actualizarDemora()"></div>
+                    <div class="form-group"><label>Demora</label><input type="number" id="fDemora-env" class="form-control" min="0" readonly></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Estado *</label>
+                        <select id="fEstadoSeg-env" class="form-control" required><option value="Pendiente">Pendiente</option><option value="Observada">Observada</option><option value="Reenviada">Reenviada</option><option value="Levantada">Levantada</option></select>
+                    </div>
+                    <div class="form-group"><label>Iteración</label><input type="number" id="fIteracion-env" class="form-control" min="1" max="5" value="1"></div>
+                </div>
+                <div class="form-group"><label>Comentario</label><textarea id="fComentario-env" class="form-control"></textarea></div>
+                <div class="form-row">
+                    <div class="form-group"><label>🔗 Link Carta (Google Drive)</label><input type="url" id="linkCarta-env" class="form-control" placeholder="https://drive.google.com/..."></div>
+                    <div class="form-group"><label>📁 Link Carpeta (Google Drive)</label><input type="url" id="linkCarpeta-env" class="form-control" placeholder="https://drive.google.com/..."></div>
+                </div>
+                <div style="text-align: right; margin-top: 12px;">
+                    <button type="button" class="btn btn-outline" onclick="Env.closeModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-rec" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h2 id="modalTitle-rec">Registrar Carta Recibida</h2><span class="close" onclick="Rec.closeModal()">&times;</span></div>
+            <form id="cartaForm-rec">
+                <input type="hidden" id="editIndex-rec">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>N° Carta *</label>
+                        <div class="carta-mode-rec" id="cartaModeRecWrapper">
+                            <div class="carta-mode-row" id="cartaModeRowStructured-rec">
+                                <div id="cartaStructured-rec" class="carta-input-container">
+                                    <span class="carta-segment">Carta N°</span>
+                                    <input type="text" id="fCartaNum-rec" class="form-control carta-input-segment" placeholder="Nro">
+                                    <span class="carta-segment">-MATE-</span>
+                                    <select id="fCartaYear-rec" class="form-control carta-year-segment">
+                                        <option value="2025">2025</option>
+                                        <option value="2026">2026</option>
+                                        <option value="2027">2027</option>
+                                    </select>
+                                    <span class="carta-segment">JS-LVL</span>
+                                </div>
+                                <label class="carta-mode-check" title="Formato Carta N° … -MATE- … JS-LVL">
+                                    <input type="radio" name="cartaModeRec" value="structured" id="cartaModeStructured-rec">
+                                    <span class="carta-mode-check-ui"></span>
+                                </label>
+                            </div>
+                            <div class="carta-mode-row" id="cartaModeRowFull-rec">
+                                <input type="text" id="fCartaManual-rec" class="form-control carta-manual-full-rec" placeholder="Texto completo (columna N° CARTA)">
+                                <label class="carta-mode-check" title="Texto libre — valor de la columna N° CARTA">
+                                    <input type="radio" name="cartaModeRec" value="full" id="cartaModeFull-rec" checked>
+                                    <span class="carta-mode-check-ui"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group"><label>Fecha *</label><input type="date" id="fFecha-rec" class="form-control" required></div>
+                </div>
+                <div class="form-group"><label>Asunto *</label><textarea id="fAsunto-rec" class="form-control" required></textarea></div>
+                <div class="form-row">
+                    <div class="form-group"><label>Tipo *</label><select id="fTipo-rec" class="form-control" required></select></div>
+                    <div class="form-group"><label>Referencia</label><input type="text" id="fReferencia-rec" class="form-control" placeholder="CARTA N° PA-MAN-2026-XXX"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Respuesta *</label>
+                        <select id="fRespuesta-rec" class="form-control" required><option value="NA">NA</option><option value="SI">SI</option><option value="NO">NO</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>N° Documento</label>
+                        <div id="numDocStructured-rec" class="numdoc-input-container">
+                            <span class="numdoc-segment">Carta N° PA-MAN-</span>
+                            <select id="fNumDocYear-rec" class="form-control numdoc-year-segment">
+                                <option value="2025">2025</option>
+                                <option value="2026">2026</option>
+                                <option value="2027">2027</option>
+                            </select>
+                            <input type="text" id="fNumDocNum-rec" class="form-control numdoc-input-segment" placeholder="Nro">
+                            <button type="button" class="btn btn-outline btn-sm btn-toggle-numdoc" id="btnToggleNumDocMode-rec" title="Editar completo">✏️</button>
+                        </div>
+                        <input type="text" id="fNumDocManual-rec" class="form-control manual-input" placeholder="N° Documento completo (ej. OFICIO N° 001-2025)">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Fecha Respuesta</label><input type="date" id="fFechaResp-rec" class="form-control"></div>
+                    <div class="form-group"><label>Demora</label><input type="number" id="fDemora-rec" class="form-control" min="0" readonly placeholder="Automático"></div>
+                </div>
+                <div class="form-group"><label>Comentario</label><textarea id="fComentario-rec" class="form-control"></textarea></div>
+                <div class="form-group"><label>Responsable</label><input type="text" id="fResponsable-rec" class="form-control" placeholder="Nombre del responsable"></div>
+                <div class="form-row">
+                    <div class="form-group"><label>🔗 Link Carta (Google Drive)</label><input type="url" id="linkCarta-rec" class="form-control" placeholder="https://drive.google.com/..."></div>
+                    <div class="form-group"><label>📁 Link Carpeta (Google Drive)</label><input type="url" id="linkCarpeta-rec" class="form-control" placeholder="https://drive.google.com/..."></div>
+                </div>
+                <div style="text-align: right; margin-top: 12px;">
+                    <button type="button" class="btn btn-outline" onclick="Rec.closeModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Variables y funciones globales
+        let currentUserRole = 'local'; // 'local' o 'admin'
+
+        function toggleUser() {
+            if (currentUserRole === 'local') {
+                const pass = prompt("Ingrese contraseña de Administrador:");
+                if (pass === 'deybis25') {
+                    currentUserRole = 'admin';
+                    updateUIBasedOnRole();
+                    alert("✅ Bienvenido, Administrador.");
+                } else if (pass !== null) {
+                    alert("❌ Contraseña incorrecta.");
+                }
+            } else {
+                if (confirm("¿Desea cambiar a modo Usuario Local?")) {
+                    currentUserRole = 'local';
+                    updateUIBasedOnRole();
+                }
+            }
+        }
+
+        function updateUIBasedOnRole() {
+            const btns = document.querySelectorAll('#userToggleBtn, #userToggleBtn-rec');
+            const excelBtns = document.querySelectorAll('.admin-only'); // Botones de Excel y Acciones
+            const bdBtns = document.querySelectorAll('.bd-admin-only'); // Botones de BD unificados
+
+            // Actualizar etiqueta de usuario
+            btns.forEach(btn => {
+                if (currentUserRole === 'admin') {
+                    btn.textContent = '👑 Administrador';
+                    btn.className = 'user-admin';
+                } else {
+                    btn.textContent = '👤 Local';
+                    btn.className = 'user-local';
+                }
+            });
+
+            // Si es local, ocultamos botones de excel, acciones y BD
+            if (currentUserRole === 'local') {
+                excelBtns.forEach(el => el.style.display = 'none');
+                bdBtns.forEach(el => el.style.display = 'none');
+            } else {
+                // Si es admin, mostramos todo
+                excelBtns.forEach(el => el.style.display = 'inline-flex'); 
+                bdBtns.forEach(el => el.style.display = 'inline-flex'); 
+                
+                // Restaurar visibilidad de columnas de acciones en tablas
+                document.querySelectorAll('th.admin-only, td.admin-only, .action-btn').forEach(el => {
+                    el.style.display = ''; 
+                });
+            }
+            
+            // Re-renderizar tablas para aplicar visibilidad en celdas dinámicas
+            Env.renderTable();
+            Rec.renderTable();
+        }
+
+        function guardarBDUnificado() {
+            const payload = {
+                timestamp: new Date().toISOString(),
+                version: "1.0-unified",
+                enviadas: typeof Env !== 'undefined' && typeof Env._getDocumentosForExport === 'function' ? Env._getDocumentosForExport() : [],
+                recibidas: typeof Rec !== 'undefined' && typeof Rec._getDocumentosForExport === 'function' ? Rec._getDocumentosForExport() : []
+            };
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8;" });
+            const fileName = `BD_SEMA_UNIFICADA_${new Date().toISOString().slice(0,10)}.json`;
+            
+            try {
+                if (window.showSaveFilePicker) {
+                    (async () => {
+                        const handle = await window.showSaveFilePicker({ 
+                            suggestedName: fileName, 
+                            types: [{ description: 'JSON Database', accept: { 'application/json': ['.json'] } }] 
+                        });
+                        const writable = await handle.createWritable();
+                        await writable.write(blob);
+                        await writable.close();
+                        _actualizarTimestampsUnificados('guardado');
+                    })();
+                } else {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url; a.download = fileName; a.style.display = 'none';
+                    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    _actualizarTimestampsUnificados('guardado');
+                }
+            } catch (err) { 
+                if (err.name !== 'AbortError') alert('❌ Error al guardar BD unificada: ' + err.message); 
+            }
+        }
+
+        function importarBDUnificado(input) {
+            const file = input.files[0]; 
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const payload = JSON.parse(e.target.result);
+                    if (!payload || !payload.enviadas || !payload.recibidas) {
+                        throw new Error('Estructura inválida. Se requieren las matrices "enviadas" y "recibidas".');
+                    }
+                    
+                    if (typeof Env !== 'undefined' && typeof Env._loadDocumentosFromImport === 'function') {
+                        Env._loadDocumentosFromImport(payload.enviadas);
+                    }
+                    if (typeof Rec !== 'undefined' && typeof Rec._loadDocumentosFromImport === 'function') {
+                        Rec._loadDocumentosFromImport(payload.recibidas);
+                    }
+                    
+                    const loadTime = payload.timestamp ? new Date(payload.timestamp).toLocaleString('es-PE') : new Date().toLocaleString('es-PE');
+                    _actualizarTimestampsUnificados('cargado', loadTime);
+                    
+                    alert(`✅ Base de datos unificada cargada.\n📅 Fecha: ${loadTime}\n📊 Enviadas: ${payload.enviadas.length} | Recibidas: ${payload.recibidas.length}`);
+                } catch (err) { 
+                    alert('❌ Error de importación: ' + err.message); 
+                }
+                input.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        function _actualizarTimestampsUnificados(accion, timeStr) {
+            const now = timeStr || new Date().toLocaleString('es-PE');
+            const views = ['env', 'rec'];
+            views.forEach(v => {
+                const el = document.getElementById(accion === 'guardado' ? `lastSaved-${v}` : `lastLoaded-${v}`);
+                if (el) el.textContent = accion === 'guardado' ? `Último guardado: ${now}` : `Última carga: ${now}`;
+                localStorage.setItem(accion === 'guardado' ? `lastSavedTime${v.toUpperCase()}` : `lastLoadedTime${v.toUpperCase()}`, now);
+            });
+        }
+
+        function switchView(view) {
+            document.getElementById('view-enviadas').classList.remove('active');
+            document.getElementById('view-recibidas').classList.remove('active');
+            document.getElementById('btn-view-enviadas').classList.remove('active');
+            document.getElementById('btn-view-recibidas').classList.remove('active');
+
+            if (view === 'enviadas') {
+                document.getElementById('view-enviadas').classList.add('active');
+                document.getElementById('btn-view-enviadas').classList.add('active');
+            } else {
+                document.getElementById('view-recibidas').classList.add('active');
+                document.getElementById('btn-view-recibidas').classList.add('active');
+            }
+        }
+
+        function parseDatePeru(dateStr) {
+            if (!dateStr) return '';
+            if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+            const parts = dateStr.split('/');
+            if (parts.length === 3) {
+                const day = parts[0].padStart(2, '0');
+                const month = parts[1].padStart(2, '0');
+                let year = parts[2];
+                if (year.length === 2) year = '20' + year;
+                return `${year}-${month}-${day}`;
+            }
+            return dateStr;
+        }
+
+        function formatDatePeru(dateStr) {
+            if (!dateStr) return '-';
+            if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return dateStr;
+            if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+                const parts = dateStr.split('-');
+                return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+            try {
+                const d = new Date(dateStr);
+                if (!isNaN(d.getTime())) {
+                    const day = String(d.getDate()).padStart(2, '0');
+                    const month = String(d.getMonth() + 1).padStart(2, '0');
+                    const year = d.getFullYear();
+                    return `${day}/${month}/${year}`;
+                }
+            } catch(e) {}
+            return dateStr;
+        }
+
+        function parseDateForInput(dateStr) {
+            if (!dateStr) return '';
+            if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+            const parts = dateStr.split('/');
+            if (parts.length === 3) {
+                const day = parts[0].padStart(2, '0');
+                const month = parts[1].padStart(2, '0');
+                let year = parts[2];
+                if (year.length === 2) year = '20' + year;
+                return `${year}-${month}-${day}`;
+            }
+            try {
+                const d = new Date(dateStr);
+                if (!isNaN(d.getTime())) {
+                    const year = d.getFullYear();
+                    const month = String(d.getMonth() + 1).padStart(2, '0');
+                    const day = String(d.getDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                }
+            } catch(e) {}
+            return '';
+        }
+
+        // Módulo CARTAS ENVIADAS
+        const Env = (function() {
+            const STORAGE_KEY = 'sema_cartas_final';
+            const TIPOS = ['TÉCNICO', 'INFORMATIVO', 'INGENIERÍA DE DETALLE', 'TDT', 'PLANOS', 'VALORIZACIÓN', 'ANTICIPO', 'SSOMA', 'PGAS', 'PMAR', 'MDIA', 'CRONOGRAMA', 'CAMBIO PC', 'DISEÑOS DE MEZCLA', 'MUNICIPALIDAD', 'PETS', 'ROTURA DE PAVIMENTO', 'INTERFERENCIA', 'POSTES METÁLICOS', 'OC_LT', 'PROCEDIMIENTOS', 'OTROS'];
+            
+            let documentos = [];
+            let filteredDocs = [];
+            let remitentes = new Set();
+            let destinatarios = new Set();
+
+            const els = {
+                modal: document.getElementById('modal-env'),
+                tableBody: document.getElementById('tableBody-env'),
+                form: document.getElementById('cartaForm-env'),
+                editIndex: document.getElementById('editIndex-env'),
+                globalSearch: document.getElementById('globalSearch-env'),
+                filterPanel: document.getElementById('filterPanel-env'),
+                lastLoaded: document.getElementById('lastLoaded-env'),
+                lastSaved: document.getElementById('lastSaved-env'),
+                cartaStructured: document.getElementById('cartaStructured-env'),
+                cartaManual: document.getElementById('fCartaManual-env'),
+                btnToggleCarta: document.getElementById('btnToggleCartaMode-env'),
+                fCartaNum: document.getElementById('fCartaNum-env'),
+                fCartaYear: document.getElementById('fCartaYear-env'),
+                fFecha: document.getElementById('fFecha-env'),
+                fRemitente: document.getElementById('fRemitente-env'),
+                fDestinatario: document.getElementById('fDestinatario-env'),
+                fAsunto: document.getElementById('fAsunto-env'),
+                fTipo: document.getElementById('fTipo-env'),
+                fRegistro: document.getElementById('fRegistro-env'),
+                fRespuesta: document.getElementById('fRespuesta-env'),
+                fFechaResp: document.getElementById('fFechaResp-env'),
+                fDemora: document.getElementById('fDemora-env'),
+                fEstadoSeg: document.getElementById('fEstadoSeg-env'),
+                fIteracion: document.getElementById('fIteracion-env'),
+                fComentario: document.getElementById('fComentario-env'),
+                linkCarta: document.getElementById('linkCarta-env'),
+                linkCarpeta: document.getElementById('linkCarpeta-env'),
+                numDocStructured: document.getElementById('numDocStructured-env'),
+                numDocManual: document.getElementById('fNumDocManual-env'),
+                btnToggleNumDoc: document.getElementById('btnToggleNumDocMode-env'),
+                fNumDocYear: document.getElementById('fNumDocYear-env'),
+                fNumDocNum: document.getElementById('fNumDocNum-env')
+            };
+
+            function init() {
+                loadData();
+                populateTipoDropdowns();
+                updateRemitenteDestinatarioFilters();
+                renderTable();
+                updateStats();
+                loadTimestamps();
+                
+                const excelInput = document.getElementById('excelInput-env');
+                if (excelInput) {
+                    excelInput.onchange = function(e) {
+                        importExcel(e);
+                    };
+                }
+                
+                els.globalSearch.addEventListener('input', debounce(applyFilters, 300));
+                els.form.addEventListener('submit', saveForm);
+                
+                const dbImportInput = document.getElementById('dbImportInput-env');
+                if (dbImportInput) {
+                    dbImportInput.onchange = function(e) {
+                        loadDB(e);
+                    };
+                }
+
+                els.btnToggleCarta.addEventListener('click', function() {
+                    if (els.cartaManual.style.display === 'none' || els.cartaManual.style.display === '') {
+                        els.cartaStructured.style.display = 'none';
+                        els.cartaManual.style.display = 'block';
+                        this.title = 'Volver a estructura';
+                        this.textContent = '↩️';
+                    } else {
+                        els.cartaStructured.style.display = 'flex';
+                        els.cartaManual.style.display = 'none';
+                        this.title = 'Editar completo';
+                        this.textContent = '✏️';
+                    }
+                });
+
+                els.btnToggleNumDoc.addEventListener('click', function() {
+                    if (els.numDocManual.style.display === 'none' || els.numDocManual.style.display === '') {
+                        els.numDocStructured.style.display = 'none';
+                        els.numDocManual.style.display = 'block';
+                        this.title = 'Volver a estructura';
+                        this.textContent = '↩️';
+                    } else {
+                        els.numDocStructured.style.display = 'flex';
+                        els.numDocManual.style.display = 'none';
+                        this.title = 'Editar completo';
+                        this.textContent = '✏️';
+                    }
+                });
+            }
+
+            function debounce(fn, delay) { let timer; return function(...args) { clearTimeout(timer); timer = setTimeout(() => fn.apply(this, args), delay); }; }
+            function loadData() { try { const saved = localStorage.getItem(STORAGE_KEY); if (saved) documentos = JSON.parse(saved); } catch (e) { documentos = []; } }
+            function saveData() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(documentos)); updateStats(); updateRemitenteDestinatarioFilters(); } catch (e) { if (e.name === 'QuotaExceededError') alert('⚠️ Espacio lleno. Exporte y limpie datos.'); } }
+            function loadTimestamps() {
+                const saved = localStorage.getItem('lastSavedTimeEnv');
+                const loaded = localStorage.getItem('lastLoadedTimeEnv');
+                if(saved) els.lastSaved.textContent = `Último guardado: ${saved}`;
+                if(loaded) els.lastLoaded.textContent = `Última carga: ${loaded}`;
+            }
+            function updateRemitenteDestinatarioFilters() {
+                remitentes.clear(); destinatarios.clear();
+                documentos.forEach(doc => { if (doc.remitente) remitentes.add(doc.remitente); if (doc.destinatario) destinatarios.add(doc.destinatario); });
+                document.getElementById('filterRemitente-env').innerHTML = '<option value="">Todos</option>' + Array.from(remitentes).sort().map(r => `<option value="${r}">${r}</option>`).join('');
+                document.getElementById('filterDestinatario-env').innerHTML = '<option value="">Todos</option>' + Array.from(destinatarios).sort().map(d => `<option value="${d}">${d}</option>`).join('');
+            }
+            function renderTable(data = documentos) {
+                els.tableBody.innerHTML = '';
+                filteredDocs = data;
+                data.forEach((doc, idx) => {
+                    const realIdx = documentos.indexOf(doc);
+                    const demora = calcularDemora(doc.fecha, doc.fechaResp);
+                    const demoraHoy = calcularDemoraHoy(doc.fecha, doc.respuesta);
+                    const row = document.createElement('tr');
+                    if (parseInt(doc.iteracion) >= 3) row.classList.add('critico');
+                    
+                    // Lógica para ocultar columna acciones en usuario local
+                    let actionCellHtml = '';
+                    if (currentUserRole === 'admin') {
+                        actionCellHtml = `<td class="admin-only"><button class="action-btn" onclick="Env.editDoc(${realIdx})">✏️</button><button class="action-btn btn-danger" onclick="Env.deleteDoc(${realIdx})">🗑️</button></td>`;
+                    } else {
+                        actionCellHtml = `<td class="admin-only" style="display:none;"></td>`;
+                    }
+
+                    row.innerHTML = `
+                        <td>${doc.item || idx + 1}</td><td><strong>${doc.numeroCarta}</strong></td><td>${truncate(doc.remitente, 20)}</td>
+                        <td>${truncate(doc.destinatario, 20)}</td><td title="${doc.asunto}">${truncate(doc.asunto, 25)}</td>
+                        <td>${formatDatePeru(doc.fecha)}</td><td>${doc.tipo}</td><td>${doc.registroMesa || '-'}</td>
+                        <td>${badgeResp(doc.respuesta)}</td><td class="col-n-doc" title="${doc.numDocumento || ''}">${doc.numDocumento || '-'}</td>
+                        <td>${formatDatePeru(doc.fechaResp)}</td><td>${demora !== null ? demora : '-'}</td><td><strong>${demoraHoy !== null ? demoraHoy : '-'}</strong></td>
+                        <td>${badgeEstado(doc.estadoSeg)}</td><td>${doc.iteracion || 1}</td><td title="${doc.comentario}">${truncate(doc.comentario, 20)}</td>
+                        <td>${doc.linkCarta ? `<a href="${doc.linkCarta}" target="_blank" class="link-drive">🔗 Ver</a>` : '-'}</td>
+                        <td>${doc.linkCarpeta ? `<a href="${doc.linkCarpeta}" target="_blank" class="link-drive">📁 Ver</a>` : '-'}</td>
+                        ${actionCellHtml}
+                    `;
+                    els.tableBody.appendChild(row);
+                });
+                
+                // Actualizar visibilidad de headers
+                const headers = document.querySelectorAll('#dataTable-env th.admin-only');
+                headers.forEach(th => {
+                    th.style.display = currentUserRole === 'admin' ? '' : 'none';
+                });
+            }
+            
+            // CORRECCIÓN: Cálculo de DEMORA (fechaResp - fecha)
+            function calcularDemora(fecha, fechaResp) {
+                if (!fecha || !fechaResp) return null;
+                const f1 = new Date(parseDatePeru(fecha));
+                const f2 = new Date(parseDatePeru(fechaResp));
+                const diffTime = Math.abs(f2 - f1);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                return diffDays;
+            }
+            
+            // CORRECCIÓN: Cálculo de DEMORA HOY (hoy - fecha) cuando respuesta es "NO"
+            function calcularDemoraHoy(fecha, respuesta) {
+                if (!fecha || respuesta !== 'NO') return 0;
+                const hoy = new Date();
+                hoy.setHours(0, 0, 0, 0);
+                const f = new Date(parseDatePeru(fecha));
+                f.setHours(0, 0, 0, 0);
+                const diffTime = hoy - f;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                return diffDays >= 0 ? diffDays : 0;
+            }
+            
+            // CORRECCIÓN: Actualizar demora automáticamente en el modal
+            function actualizarDemora() {
+                const fecha = els.fFecha.value;
+                const fechaResp = els.fFechaResp.value;
+                const respuesta = els.fRespuesta.value;
+                
+                if (fecha && fechaResp) {
+                    const demora = calcularDemora(fecha, fechaResp);
+                    els.fDemora.value = demora !== null ? demora : '';
+                } else {
+                    els.fDemora.value = '';
+                }
+            }
+            
+            function truncate(str, len) { if (!str) return ''; return str.length > len ? str.substring(0, len) + '...' : str; }
+            function badgeResp(v) { return v === 'SI' ? '<span class="badge badge-si">SI</span>' : v === 'NO' ? '<span class="badge badge-no">NO</span>' : '<span class="badge badge-na">NA</span>'; }
+            function badgeEstado(e) { const cls = e === 'Levantada' ? 'badge-lev' : e === 'Observada' ? 'badge-obs' : 'badge-pend'; return `<span class="badge ${cls}">${e}</span>`; }
+            function updateStats() {
+                document.getElementById('statTotal-env').textContent = documentos.length;
+                document.getElementById('statPendientes-env').textContent = documentos.filter(d => d.estadoSeg === 'Pendiente').length;
+                document.getElementById('statObservadas-env').textContent = documentos.filter(d => d.estadoSeg === 'Observada' || d.estadoSeg === 'Reenviada').length;
+                document.getElementById('statLevantadas-env').textContent = documentos.filter(d => d.estadoSeg === 'Levantada').length;
+                document.getElementById('statReenvios-env').textContent = documentos.filter(d => parseInt(d.iteracion) >= 3).length;
+            }
+            function filterByTotal(type) {
+                document.querySelectorAll('#view-enviadas .stat-card').forEach(card => card.classList.remove('active'));
+                clearFilters();
+                if (type === 'all') { document.getElementById('statCardTotal-env').classList.add('active'); applyFilters(); return; }
+                if (type === 'pendientes') { document.getElementById('statCardPendientes-env').classList.add('active'); document.getElementById('filterEstado-env').value = 'Pendiente'; }
+                else if (type === 'observadas') { document.getElementById('statCardObservadas-env').classList.add('active'); document.getElementById('filterEstado-env').value = 'Observada'; }
+                else if (type === 'levantadas') { document.getElementById('statCardLevantadas-env').classList.add('active'); document.getElementById('filterEstado-env').value = 'Levantada'; }
+                else if (type === 'reenvios') { document.getElementById('statCardReenvios-env').classList.add('active'); document.getElementById('filterIteracion-env').value = '3'; }
+                applyFilters();
+            }
+            function toggleFilters() { els.filterPanel.style.display = els.filterPanel.style.display === 'none' ? 'block' : 'none'; }
+            function clearFilters() {
+                ['filterRemitente-env','filterDestinatario-env','filterKeyword-env','filterEstado-env','filterTipo-env','filterRespuesta-env','filterIteracion-env','filterFechaDesde-env','filterFechaHasta-env','globalSearch-env'].forEach(id => document.getElementById(id).value = '');
+                document.querySelectorAll('#view-enviadas .stat-card').forEach(card => card.classList.remove('active'));
+                applyFilters();
+            }
+            function applyFilters() {
+                const search = els.globalSearch.value.toLowerCase().trim();
+                const filterRemitente = document.getElementById('filterRemitente-env').value;
+                const filterDestinatario = document.getElementById('filterDestinatario-env').value;
+                const filterKeyword = document.getElementById('filterKeyword-env').value.toLowerCase().trim();
+                const fEstado = document.getElementById('filterEstado-env').value;
+                const fTipo = document.getElementById('filterTipo-env').value;
+                const fResp = document.getElementById('filterRespuesta-env').value;
+                const fIter = document.getElementById('filterIteracion-env').value;
+                const fDesde = document.getElementById('filterFechaDesde-env').value;
+                const fHasta = document.getElementById('filterFechaHasta-env').value;
+                let res = documentos.filter(d => {
+                    const matchSearch = !search || Object.values(d).some(val => String(val).toLowerCase().includes(search));
+                    const matchRemitente = !filterRemitente || (d.remitente === filterRemitente);
+                    const matchDestinatario = !filterDestinatario || (d.destinatario === filterDestinatario);
+                    const matchKeyword = !filterKeyword || (d.asunto && d.asunto.toLowerCase().includes(filterKeyword)) || (d.comentario && d.comentario.toLowerCase().includes(filterKeyword)) || (d.numeroCarta && d.numeroCarta.toLowerCase().includes(filterKeyword));
+                    const matchEstado = !fEstado || d.estadoSeg === fEstado;
+                    const matchTipo = !fTipo || d.tipo === fTipo;
+                    const matchResp = !fResp || d.respuesta === fResp;
+                    const matchIter = !fIter || String(d.iteracion) === fIter;
+                    let matchDate = true;
+                    if (fDesde || fHasta) {
+                        const dFecha = new Date(parseDatePeru(d.fecha));
+                        if (fDesde && dFecha < new Date(fDesde)) matchDate = false;
+                        if (fHasta && dFecha > new Date(fHasta)) matchDate = false;
+                    }
+                    return matchSearch && matchRemitente && matchDestinatario && matchKeyword && matchEstado && matchTipo && matchResp && matchIter && matchDate;
+                });
+                renderTable(res);
+            }
+            function populateTipoDropdowns() {
+                const opts = TIPOS.map(t => `<option value="${t}">${t}</option>`).join('');
+                els.fTipo.innerHTML = opts;
+                document.getElementById('filterTipo-env').innerHTML = `<option value="">Todos</option>` + opts;
+            }
+            function parseCartaNumber(cartaNum) {
+                if (!cartaNum) return { year: new Date().getFullYear().toString(), num: '' };
+                const match = cartaNum.match(/Carta N° PA-MAN-(\d{4})-(.+)/);
+                if (match) return { year: match[1], num: match[2] };
+                return { year: new Date().getFullYear().toString(), num: cartaNum };
+            }
+            function combineCartaNumber(year, num) { return `Carta N° PA-MAN-${year}-${num}`; }
+            function parseNumDocNumber(numDoc) {
+                if (!numDoc) return { year: new Date().getFullYear().toString(), num: '' };
+                const match = numDoc.match(/Carta N° PA-MAN-(\d{4})-(.+)/i);
+                if (match) return { year: match[1], num: match[2] };
+                return { year: new Date().getFullYear().toString(), num: numDoc };
+            }
+            function combineNumDocNumber(year, num) { return `Carta N° PA-MAN-${year}-${num}`; }
+            function openModal(idx = -1) {
+                els.modal.style.display = 'flex';
+                document.getElementById('modalTitle-env').textContent = idx === -1 ? 'Nueva Carta' : 'Editar Carta';
+                els.editIndex.value = idx;
+                els.form.reset();
+                els.cartaStructured.style.display = 'flex';
+                els.cartaManual.style.display = 'none';
+                els.btnToggleCarta.textContent = '✏️';
+                els.numDocStructured.style.display = 'flex';
+                els.numDocManual.style.display = 'none';
+                els.btnToggleNumDoc.textContent = '✏️';
+
+                if (idx !== -1) {
+                    const d = documentos[idx];
+                    let uniqueRemitentes = [...new Set(documentos.map(item => item.remitente).filter(Boolean))].sort();
+                    els.fRemitente.innerHTML = '';
+                    els.fRemitente.add(new Option('', ''));
+                    uniqueRemitentes.forEach(r => els.fRemitente.add(new Option(r, r)));
+                    let uniqueDestinatarios = [...new Set(documentos.map(item => item.destinatario).filter(Boolean))].sort();
+                    els.fDestinatario.innerHTML = '';
+                    els.fDestinatario.add(new Option('', ''));
+                    uniqueDestinatarios.forEach(dest => els.fDestinatario.add(new Option(dest, dest)));
+                    els.fRemitente.value = d.remitente || '';
+                    els.fDestinatario.value = d.destinatario || '';
+                    const parsedCarta = parseCartaNumber(d.numeroCarta);
+                    els.fCartaYear.value = parsedCarta.year;
+                    els.fCartaNum.value = parsedCarta.num;
+                    if (d.fecha) els.fFecha.value = parseDateForInput(d.fecha);
+                    else els.fFecha.value = '';
+                    els.fAsunto.value = d.asunto || '';
+                    els.fTipo.value = d.tipo || '';
+                    els.fRegistro.value = d.registroMesa || '';
+                    els.fRespuesta.value = d.respuesta || 'NA';
+                    const parsedNumDoc = parseNumDocNumber(d.numDocumento);
+                    if (parsedNumDoc.num !== d.numDocumento) {
+                        els.fNumDocYear.value = parsedNumDoc.year;
+                        els.fNumDocNum.value = parsedNumDoc.num;
+                        els.numDocManual.value = '';
+                    } else {
+                        els.fNumDocYear.value = '2026';
+                        els.fNumDocNum.value = '';
+                        els.numDocManual.value = d.numDocumento || '';
+                        if (d.numDocumento) {
+                            els.numDocStructured.style.display = 'none';
+                            els.numDocManual.style.display = 'block';
+                            els.btnToggleNumDoc.textContent = '↩️';
+                        }
+                    }
+                    if (d.fechaResp) els.fFechaResp.value = parseDateForInput(d.fechaResp);
+                    else els.fFechaResp.value = '';
+                    // CORRECCIÓN: Calcular y mostrar demora automáticamente
+                    actualizarDemora();
+                    els.fEstadoSeg.value = d.estadoSeg || 'Pendiente';
+                    els.fIteracion.value = d.iteracion || 1;
+                    els.fComentario.value = d.comentario || '';
+                    els.linkCarta.value = d.linkCarta || '';
+                    els.linkCarpeta.value = d.linkCarpeta || '';
+                } else {
+                    els.fFecha.valueAsDate = new Date();
+                    const currentYear = new Date().getFullYear().toString();
+                    els.fCartaYear.value = currentYear;
+                    els.fNumDocYear.value = currentYear;
+                    els.fDemora.value = '';
+                }
+            }
+            function closeModal() { els.modal.style.display = 'none'; }
+            function saveForm(e) {
+                e.preventDefault();
+                const idx = parseInt(els.editIndex.value);
+                const cartaYear = els.fCartaYear.value;
+                const cartaNum = els.fCartaNum.value.trim();
+                let numeroCarta;
+                if (els.cartaManual.style.display === 'block' && els.cartaManual.value.trim()) numeroCarta = els.cartaManual.value.trim();
+                else numeroCarta = combineCartaNumber(cartaYear, cartaNum);
+                const numDocYear = els.fNumDocYear.value;
+                const numDocNum = els.fNumDocNum.value.trim();
+                let numDocumento;
+                if (els.numDocManual.style.display === 'block' && els.numDocManual.value.trim()) numDocumento = els.numDocManual.value.trim();
+                else numDocumento = combineNumDocNumber(numDocYear, numDocNum);
+                const newDoc = {
+                    item: idx !== -1 ? documentos[idx].item : (documentos.length + 1),
+                    numeroCarta: numeroCarta, fecha: els.fFecha.value,
+                    remitente: els.fRemitente.value.trim(), destinatario: els.fDestinatario.value.trim(),
+                    asunto: els.fAsunto.value.trim(), tipo: els.fTipo.value,
+                    registroMesa: els.fRegistro.value.trim(), respuesta: els.fRespuesta.value,
+                    numDocumento: numDocumento, fechaResp: els.fFechaResp.value,
+                    demora: els.fDemora.value, estadoSeg: els.fEstadoSeg.value,
+                    iteracion: els.fIteracion.value || 1, comentario: els.fComentario.value.trim(),
+                    linkCarta: els.linkCarta.value.trim(), linkCarpeta: els.linkCarpeta.value.trim()
+                };
+                if (idx === -1) documentos.push(newDoc); else documentos[idx] = newDoc;
+                saveData(); renderTable(); applyFilters(); closeModal();
+            }
+            function editDoc(idx) { openModal(idx); }
+            function deleteDoc(idx) { if (confirm('¿Eliminar este registro permanentemente?')) { documentos.splice(idx, 1); saveData(); renderTable(); applyFilters(); } }
+            
+            function importExcel(e) {
+                console.log('📥 Import Excel llamado - Enviadas');
+                const file = e.target.files[0];
+                if (!file) {
+                    console.warn('No se seleccionó archivo');
+                    return;
+                }
+                
+                console.log('Archivo seleccionado:', file.name);
+                
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    try {
+                        console.log('Leyendo archivo...');
+                        const data = new Uint8Array(evt.target.result);
+                        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                        console.log('Workbook cargado:', workbook.SheetNames);
+                        
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
+                        console.log('Datos JSON:', jsonData.length, 'filas');
+                        
+                        if (jsonData.length < 2) { 
+                            alert('Archivo vacío'); 
+                            return; 
+                        }
+                        
+                        let startRow = 0;
+                        for (let i = 0; i < Math.min(10, jsonData.length); i++) {
+                            if (jsonData[i] && jsonData[i].some(cell => String(cell).includes('N° DE CARTA') || String(cell).includes('ÍTEM'))) { 
+                                startRow = i; 
+                                break; 
+                            }
+                        }
+                        
+                        const headers = jsonData[startRow].map(h => String(h).trim().toUpperCase());
+                        console.log('Headers:', headers);
+                        
+                        const colIndex = {
+                            item: headers.findIndex(h => h.includes('ÍTEM')), 
+                            numeroCarta: headers.findIndex(h => h.includes('N° DE CARTA')),
+                            remitente: headers.findIndex(h => h.includes('REMITENTE')), 
+                            destinatario: headers.findIndex(h => h.includes('DESTINATARIO')),
+                            asunto: headers.findIndex(h => h.includes('ASUNTO')), 
+                            fecha: headers.findIndex(h => h === 'FECHA' && !h.includes('RESP')),
+                            registroMesa: headers.findIndex(h => h.includes('REGISTRO MESA')), 
+                            tipo: headers.findIndex(h => h === 'TIPO'),
+                            respuesta: headers.findIndex(h => h === 'RESPUESTA'), 
+                            numDocumento: headers.findIndex(h => h.includes('N° DE DOCUMENTO')),
+                            fechaResp: headers.findIndex(h => h.includes('FECHA2') || h.includes('FECHA RESP')),
+                            demora: headers.findIndex(h => h === 'DEMORA' && !h.includes('HOY')), 
+                            comentario: headers.findIndex(h => h.includes('COMENTARIO'))
+                        };
+                        
+                        console.log('Índices de columnas:', colIndex);
+                        
+                        let imported = 0;
+                        for (let i = startRow + 1; i < jsonData.length; i++) {
+                            const row = jsonData[i]; 
+                            if (!row || row.length === 0) continue;
+                            
+                            const numeroCarta = getValue(row, colIndex.numeroCarta); 
+                            if (!numeroCarta || numeroCarta === 'Anulada') continue;
+                            
+                            documentos.push({
+                                item: parseInt(getValue(row, colIndex.item)) || imported + 1, 
+                                numeroCarta: numeroCarta,
+                                fecha: parseDatePeru(getValue(row, colIndex.fecha)), 
+                                remitente: getValue(row, colIndex.remitente),
+                                destinatario: getValue(row, colIndex.destinatario), 
+                                asunto: getValue(row, colIndex.asunto),
+                                tipo: getValue(row, colIndex.tipo) || 'OTROS', 
+                                registroMesa: getValue(row, colIndex.registroMesa),
+                                respuesta: (getValue(row, colIndex.respuesta) || 'NA').toUpperCase().trim(), 
+                                numDocumento: getValue(row, colIndex.numDocumento),
+                                fechaResp: parseDatePeru(getValue(row, colIndex.fechaResp)), 
+                                demora: getValue(row, colIndex.demora),
+                                estadoSeg: inferEstado(getValue(row, colIndex.comentario), getValue(row, colIndex.respuesta)),
+                                iteracion: inferIteracion(getValue(row, colIndex.comentario), 1), 
+                                comentario: getValue(row, colIndex.comentario),
+                                linkCarta: '', 
+                                linkCarpeta: ''
+                            });
+                            imported++;
+                        }
+                        
+                        console.log('Registros importados:', imported);
+                        
+                        if (imported > 0) { 
+                            saveData(); 
+                            renderTable(); 
+                            applyFilters(); 
+                            alert(`✅ Importados: ${imported} registros`); 
+                        } else {
+                            alert('⚠️ No se importaron registros. Verifique el formato del archivo.');
+                        }
+                    } catch (err) { 
+                        console.error('Error en importExcel:', err);
+                        alert('❌ Error: ' + err.message); 
+                    }
+                    e.target.value = '';
+                };
+                reader.onerror = function() {
+                    console.error('Error leyendo archivo');
+                    alert('❌ Error al leer el archivo');
+                };
+                reader.readAsArrayBuffer(file);
+            }
+            
+            function getValue(row, index) { 
+                if (index < 0 || index >= row.length) return ''; 
+                const val = row[index]; 
+                if (val === null || val === undefined) return ''; 
+                return String(val).trim(); 
+            }
+            
+            function exportExcel() {
+                if (documentos.length === 0) return alert('No hay datos');
+                const wb = XLSX.utils.book_new();
+                const data = documentos.map(d => ({
+                    'ÍTEM': d.item, 'N° DE CARTA': d.numeroCarta, 'REMITENTE PA.PERU': d.remitente, 'DESTINATARIO EU': d.destinatario,
+                    'ASUNTO': d.asunto, 'FECHA': formatDatePeru(d.fecha), 'TIPO': d.tipo, 'REG. MESA': d.registroMesa, 'RESPUESTA': d.respuesta,
+                    'N° DE DOCUMENTO': d.numDocumento, 'FECHA RESP.': formatDatePeru(d.fechaResp), 'DEMORA': calcularDemora(d.fecha, d.fechaResp),
+                    'DEMORA A HOY': calcularDemoraHoy(d.fecha, d.respuesta), 'ESTADO SEGUIMIENTO': d.estadoSeg, 'ITERACIÓN': d.iteracion, 'COMENTARIO': d.comentario,
+                    'Link Carta': d.linkCarta || '', 'Link Carpeta': d.linkCarpeta || ''
+                }));
+                const ws = XLSX.utils.json_to_sheet(data, {skipHeader: false});
+                ws['!cols'] = [{wch: 6}, {wch: 28}, {wch: 45}, {wch: 45}, {wch: 55}, {wch: 12}, {wch: 22}, {wch: 18}, {wch: 12}, {wch: 40}, {wch: 12}, {wch: 10}, {wch: 14}, {wch: 18}, {wch: 10}, {wch: 70}, {wch: 50}, {wch: 50}];
+                XLSX.utils.book_append_sheet(wb, ws, "Control_Cartas");
+                const infoData = [['MATRIZ DE CONTROL DE CARTAS - ENVIADAS'],['CONTRATISTA:', 'P.A PERÚ S.A.C'],['SUPERVISIÓN:', 'TERRANDES S.A.C'],['RESPONSABLE:', 'Ing. Luis Deybis Aponte Primo'],['AÑO:', '2026'],['FECHA EXPORTACIÓN:', new Date().toLocaleString('es-PE')],['TOTAL REGISTROS:', documentos.length]];
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(infoData), "Información");
+                XLSX.writeFile(wb, `Control_Cartas_SEMA_${new Date().toISOString().split('T')[0]}.xlsx`);
+            }
+            async function saveDB() {
+                const payload = { timestamp: new Date().toISOString(), version: "1.0", documentos: documentos };
+                const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
+                const fileName = `Matriz_Cartas_DB_${new Date().toISOString().slice(0,10)}.json`;
+                try {
+                    if (window.showSaveFilePicker) {
+                        const handle = await window.showSaveFilePicker({ suggestedName: fileName, types: [{ description: 'JSON Database', accept: { 'application/json': ['.json'] } }] });
+                        const writable = await handle.createWritable();
+                        await writable.write(blob);
+                        await writable.close();
+                    } else {
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url; a.download = fileName; a.style.display = 'none';
+                        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    }
+                    const now = new Date().toLocaleString('es-PE');
+                    els.lastSaved.textContent = `Último guardado: ${now}`;
+                    localStorage.setItem('lastSavedTimeEnv', now);
+                } catch (err) { if (err.name !== 'AbortError') alert('❌ Error al guardar: ' + err.message); }
+            }
+            function loadDB(event) {
+                const file = event.target.files[0]; if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const payload = JSON.parse(e.target.result);
+                        if (payload && Array.isArray(payload.documentos)) {
+                            documentos = payload.documentos;
+                            saveData(); renderTable(); updateStats(); updateRemitenteDestinatarioFilters();
+                            const loadTime = payload.timestamp ? new Date(payload.timestamp).toLocaleString('es-PE') : new Date().toLocaleString('es-PE');
+                            els.lastLoaded.textContent = `Última carga: ${loadTime}`;
+                            localStorage.setItem('lastLoadedTimeEnv', loadTime);
+                            alert(`✅ Base de datos cargada.\n📅 Fecha: ${loadTime}\n📊 Registros: ${documentos.length}`);
+                        } else { alert('❌ Formato inválido.'); }
+                    } catch (err) { alert('❌ Error: ' + err.message); }
+                };
+                reader.readAsText(file);
+                event.target.value = '';
+            }
+            function inferEstado(coment, resp) {
+                if (!coment && resp === 'NA') return 'Pendiente';
+                const c = coment.toLowerCase();
+                if (c.includes('levant')) return 'Levantada';
+                if (c.includes('observ') || c.includes('reenví')) return 'Observada';
+                if (resp === 'SI') return 'Levantada';
+                return 'Pendiente';
+            }
+            function inferIteracion(coment, base) {
+                const c = coment.toLowerCase();
+                if (c.includes('reenví')) return base + 1;
+                if (c.includes('segunda') || c.includes('2da')) return 2;
+                if (c.includes('tercera') || c.includes('3ra')) return 3;
+                return Math.min(base, 5);
+            }
+            window.onclick = (e) => { if (e.target.id === 'modal-env') closeModal(); };
+
+            return { 
+                init, 
+                editDoc, 
+                deleteDoc, 
+                openModal: openModal, 
+                closeModal: closeModal, 
+                exportExcel: exportExcel, 
+                saveDB: saveDB, 
+                filterByTotal: filterByTotal, 
+                toggleFilters: toggleFilters, 
+                applyFilters: applyFilters,
+                importExcel: importExcel,
+                actualizarDemora: actualizarDemora,
+                renderTable: renderTable,
+                _getDocumentosForExport: function() { return documentos; },
+                _loadDocumentosFromImport: function(data) {
+                    documentos = Array.isArray(data) ? data : [];
+                    saveData(); renderTable(); updateStats(); updateRemitenteDestinatarioFilters();
+                }
+            };
+        })();
+
+        // Módulo CARTAS RECIBIDAS  
+        const Rec = (function() {
+            const STORAGE_KEY = 'sema_cartas_recibidas';
+            const TIPOS = ['TÉCNICO', 'INFORMATIVO', 'INGENIERÍA DE DETALLE', 'TDT', 'PLANOS', 'VALORIZACIÓN', 'ANTICIPO', 'SSOMA', 'PGAS', 'PMAR', 'MDIA', 'CRONOGRAMA', 'CAMBIO PC', 'DISEÑOS DE MEZCLA', 'MUNICIPALIDAD', 'PETS', 'ROTURA DE PAVIMENTO', 'INTERFERENCIA', 'POSTES METÁLICOS', 'OC_LT', 'PROCEDIMIENTOS', 'FORMATOS', 'OTROS'];
+            
+            let documentos = [];
+            let filteredDocs = [];
+            let responsables = new Set();
+
+            const els = {
+                modal: document.getElementById('modal-rec'),
+                tableBody: document.getElementById('tableBody-rec'),
+                form: document.getElementById('cartaForm-rec'),
+                editIndex: document.getElementById('editIndex-rec'),
+                globalSearch: document.getElementById('globalSearch-rec'),
+                filterPanel: document.getElementById('filterPanel-rec'),
+                lastLoaded: document.getElementById('lastLoaded-rec'),
+                lastSaved: document.getElementById('lastSaved-rec'),
+                cartaStructured: document.getElementById('cartaStructured-rec'),
+                cartaManual: document.getElementById('fCartaManual-rec'),
+                cartaModeFull: document.getElementById('cartaModeFull-rec'),
+                cartaModeStructured: document.getElementById('cartaModeStructured-rec'),
+                fCartaNum: document.getElementById('fCartaNum-rec'),
+                fCartaYear: document.getElementById('fCartaYear-rec'),
+                fFecha: document.getElementById('fFecha-rec'),
+                fAsunto: document.getElementById('fAsunto-rec'),
+                fTipo: document.getElementById('fTipo-rec'),
+                fReferencia: document.getElementById('fReferencia-rec'),
+                fRespuesta: document.getElementById('fRespuesta-rec'),
+                fFechaResp: document.getElementById('fFechaResp-rec'),
+                fDemora: document.getElementById('fDemora-rec'),
+                fComentario: document.getElementById('fComentario-rec'),
+                fResponsable: document.getElementById('fResponsable-rec'),
+                linkCarta: document.getElementById('linkCarta-rec'),
+                linkCarpeta: document.getElementById('linkCarpeta-rec'),
+                numDocStructured: document.getElementById('numDocStructured-rec'),
+                numDocManual: document.getElementById('fNumDocManual-rec'),
+                btnToggleNumDoc: document.getElementById('btnToggleNumDocMode-rec'),
+                fNumDocYear: document.getElementById('fNumDocYear-rec'),
+                fNumDocNum: document.getElementById('fNumDocNum-rec')
+            };
+
+            function init() {
+                loadData();
+                populateTipoDropdowns();
+                updateResponsablesFilter();
+                renderTable();
+                updateStats();
+                loadTimestamps();
+                
+                const excelInput = document.getElementById('excelInput-rec');
+                if (excelInput) {
+                    excelInput.onchange = function(e) {
+                        importExcel(e);
+                    };
+                }
+                
+                els.globalSearch.addEventListener('input', debounce(applyFilters, 300));
+                els.form.addEventListener('submit', saveForm);
+                
+                const dbImportInput = document.getElementById('dbImportInput-rec');
+                if (dbImportInput) {
+                    dbImportInput.onchange = function(e) {
+                        loadDB(e);
+                    };
+                }
+
+                function updateCartaModeRecUI() {
+                    const full = els.cartaModeFull.checked;
+                    const rowS = document.getElementById('cartaModeRowStructured-rec');
+                    const rowF = document.getElementById('cartaModeRowFull-rec');
+                    if (rowS) rowS.classList.toggle('is-inactive', full);
+                    if (rowF) rowF.classList.toggle('is-inactive', !full);
+                }
+                function onCartaModeRecChange() {
+                    updateCartaModeRecUI();
+                    if (els.cartaModeFull.checked) {
+                        const num = els.fCartaNum.value.trim();
+                        const year = els.fCartaYear.value;
+                        if (num) els.cartaManual.value = combineCartaNumber(year, num);
+                    } else {
+                        const p = parseCartaNumber(els.cartaManual.value.trim());
+                        els.fCartaYear.value = p.year;
+                        els.fCartaNum.value = p.num;
+                    }
+                }
+                els.cartaModeFull.addEventListener('change', onCartaModeRecChange);
+                els.cartaModeStructured.addEventListener('change', onCartaModeRecChange);
+
+                els.btnToggleNumDoc.addEventListener('click', function() {
+                    if (els.numDocManual.style.display === 'none' || els.numDocManual.style.display === '') {
+                        els.numDocStructured.style.display = 'none';
+                        els.numDocManual.style.display = 'block';
+                        this.title = 'Volver a estructura';
+                        this.textContent = '↩️';
+                    } else {
+                        els.numDocStructured.style.display = 'flex';
+                        els.numDocManual.style.display = 'none';
+                        this.title = 'Editar completo';
+                        this.textContent = '✏️';
+                    }
+                });
+            }
+
+            function debounce(fn, delay) { let timer; return function(...args) { clearTimeout(timer); timer = setTimeout(() => fn.apply(this, args), delay); }; }
+            function loadData() { try { const saved = localStorage.getItem(STORAGE_KEY); if (saved) documentos = JSON.parse(saved); } catch (e) { documentos = []; } }
+            function saveData() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(documentos)); updateStats(); updateResponsablesFilter(); } catch (e) { if (e.name === 'QuotaExceededError') alert('⚠️ Espacio lleno. Exporte y limpie datos.'); } }
+            function loadTimestamps() {
+                const saved = localStorage.getItem('lastSavedTimeRec');
+                const loaded = localStorage.getItem('lastLoadedTimeRec');
+                if(saved) els.lastSaved.textContent = `Último guardado: ${saved}`;
+                if(loaded) els.lastLoaded.textContent = `Última carga: ${loaded}`;
+            }
+            function updateResponsablesFilter() {
+                responsables.clear();
+                documentos.forEach(doc => { if (doc.responsable) responsables.add(doc.responsable); });
+                document.getElementById('filterResponsable-rec').innerHTML = '<option value="">Todos</option>' + Array.from(responsables).sort().map(r => `<option value="${r}">${r}</option>`).join('');
+            }
+            function getDateObject(dateStr) {
+                if (!dateStr) return null;
+                if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) { const d = new Date(dateStr); return isNaN(d) ? null : d; }
+                if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) { const parts = dateStr.split('/'); const d = new Date(parts[2], parts[1]-1, parts[0]); return isNaN(d) ? null : d; }
+                const d = new Date(dateStr); return isNaN(d) ? null : d;
+            }
+            function renderTable(data = documentos) {
+                els.tableBody.innerHTML = '';
+                filteredDocs = data;
+                const hoy = new Date(); hoy.setHours(0,0,0,0);
+                data.forEach((doc, idx) => {
+                    const realIdx = documentos.indexOf(doc);
+                    let demora = 0;
+                    const dFecha = getDateObject(doc.fecha);
+                    const dFechaResp = getDateObject(doc.fechaResp);
+                    if (dFecha && dFechaResp) demora = Math.floor((dFechaResp - dFecha) / (1000 * 60 * 60 * 24));
+                    let demoraHoy = 0;
+                    if (doc.respuesta === 'NO' && dFecha) demoraHoy = Math.floor((hoy - dFecha) / (1000 * 60 * 60 * 24));
+                    const row = document.createElement('tr');
+                    if (parseInt(doc.demora) > 10) row.classList.add('critico');
+
+                    // Lógica para ocultar columna acciones en usuario local
+                    let actionCellHtml = '';
+                    if (currentUserRole === 'admin') {
+                        actionCellHtml = `<td class="admin-only"><button class="action-btn" onclick="Rec.editDoc(${realIdx})">✏️</button><button class="action-btn btn-danger" onclick="Rec.deleteDoc(${realIdx})">🗑️</button></td>`;
+                    } else {
+                        actionCellHtml = `<td class="admin-only" style="display:none;"></td>`;
+                    }
+
+                    row.innerHTML = `
+                        <td>${doc.item || idx + 1}</td><td><strong>${doc.numeroCarta}</strong></td><td title="${doc.asunto}">${truncate(doc.asunto, 30)}</td>
+                        <td>${formatDatePeru(doc.fecha)}</td><td>${doc.tipo}</td><td>${doc.referencia || '-'}</td>
+                        <td>${badgeResp(doc.respuesta)}</td><td class="col-n-doc" title="${doc.numDocumento || ''}">${doc.numDocumento || '-'}</td>
+                        <td>${formatDatePeru(doc.fechaResp)}</td><td>${demora}</td><td><strong>${demoraHoy}</strong></td>
+                        <td title="${doc.comentario}">${truncate(doc.comentario, 20)}</td><td>${doc.responsable || '-'}</td>
+                        <td>${doc.linkCarta ? `<a href="${doc.linkCarta}" target="_blank" class="link-drive">🔗 Ver</a>` : '-'}</td>
+                        <td>${doc.linkCarpeta ? `<a href="${doc.linkCarpeta}" target="_blank" class="link-drive">📁 Ver</a>` : '-'}</td>
+                        ${actionCellHtml}
+                    `;
+                    els.tableBody.appendChild(row);
+                });
+
+                // Actualizar visibilidad de headers
+                const headers = document.querySelectorAll('#dataTable-rec th.admin-only');
+                headers.forEach(th => {
+                    th.style.display = currentUserRole === 'admin' ? '' : 'none';
+                });
+            }
+            function truncate(str, len) { if (!str) return ''; return str.length > len ? str.substring(0, len) + '...' : str; }
+            function badgeResp(v) { return v === 'SI' ? '<span class="badge badge-si">SI</span>' : v === 'NO' ? '<span class="badge badge-no">NO</span>' : '<span class="badge badge-na">NA</span>'; }
+            function updateStats() {
+                document.getElementById('statTotal-rec').textContent = documentos.length;
+                document.getElementById('statPendientes-rec').textContent = documentos.filter(d => d.respuesta === 'NA').length;
+                document.getElementById('statAtendidas-rec').textContent = documentos.filter(d => d.respuesta === 'SI').length;
+                document.getElementById('statObservadas-rec').textContent = documentos.filter(d => d.respuesta === 'NO').length;
+                const hoy = new Date(); hoy.setHours(0,0,0,0);
+                let retrasoCount = 0;
+                documentos.forEach(doc => {
+                    const dFecha = getDateObject(doc.fecha);
+                    if (doc.respuesta === 'NO' && dFecha) {
+                        const demoraHoy = Math.floor((hoy - dFecha) / (1000 * 60 * 60 * 24));
+                        if (demoraHoy >= 7) retrasoCount++;
+                    }
+                });
+                document.getElementById('statRetraso-rec').textContent = retrasoCount;
+            }
+            function filterByTotal(type) {
+                document.querySelectorAll('#view-recibidas .stat-card').forEach(card => card.classList.remove('active'));
+                clearFilters();
+                if (type === 'all') { document.getElementById('statCardTotal-rec').classList.add('active'); applyFilters(); return; }
+                if (type === 'pendientes') { document.getElementById('statCardPendientes-rec').classList.add('active'); document.getElementById('filterRespuesta-rec').value = 'NA'; applyFilters(); }
+                else if (type === 'atendidas') { document.getElementById('statCardAtendidas-rec').classList.add('active'); document.getElementById('filterRespuesta-rec').value = 'SI'; applyFilters(); }
+                else if (type === 'observadas') { document.getElementById('statCardObservadas-rec').classList.add('active'); document.getElementById('filterRespuesta-rec').value = 'NO'; applyFilters(); }
+                else if (type === 'retraso') { 
+                    document.getElementById('statCardRetraso-rec').classList.add('active'); 
+                    const hoy = new Date(); hoy.setHours(0,0,0,0);
+                    filteredDocs = documentos.filter(d => {
+                        const dFecha = getDateObject(d.fecha);
+                        if (d.respuesta === 'NO' && dFecha) {
+                            const demoraHoy = Math.floor((hoy - dFecha) / (1000 * 60 * 60 * 24));
+                            return demoraHoy >= 7;
+                        }
+                        return false;
+                    });
+                    renderTable(filteredDocs);
+                    return; 
+                }
+            }
+            function toggleFilters() { els.filterPanel.style.display = els.filterPanel.style.display === 'none' ? 'block' : 'none'; }
+            function clearFilters() {
+                ['filterTipo-rec','filterRespuesta-rec','filterKeyword-rec','filterFechaDesde-rec','filterFechaHasta-rec','filterResponsable-rec','globalSearch-rec'].forEach(id => document.getElementById(id).value = '');
+                document.querySelectorAll('#view-recibidas .stat-card').forEach(card => card.classList.remove('active'));
+                applyFilters();
+            }
+            function applyFilters() {
+                const search = els.globalSearch.value.toLowerCase().trim();
+                const fTipo = document.getElementById('filterTipo-rec').value;
+                const fResp = document.getElementById('filterRespuesta-rec').value;
+                const filterKeyword = document.getElementById('filterKeyword-rec').value.toLowerCase().trim();
+                const fDesde = document.getElementById('filterFechaDesde-rec').value;
+                const fHasta = document.getElementById('filterFechaHasta-rec').value;
+                const fResponsable = document.getElementById('filterResponsable-rec').value;
+                let res = documentos.filter(d => {
+                    const matchSearch = !search || Object.values(d).some(val => String(val).toLowerCase().includes(search));
+                    const matchTipo = !fTipo || d.tipo === fTipo;
+                    const matchResp = !fResp || d.respuesta === fResp;
+                    const matchKeyword = !filterKeyword || (d.asunto && d.asunto.toLowerCase().includes(filterKeyword)) || (d.numeroCarta && d.numeroCarta.toLowerCase().includes(filterKeyword));
+                    const matchResponsable = !fResponsable || (d.responsable && d.responsable === fResponsable);
+                    let matchDate = true;
+                    if (fDesde || fHasta) {
+                        const dFecha = getDateObject(d.fecha);
+                        if (fDesde && dFecha && dFecha < new Date(fDesde)) matchDate = false;
+                        if (fHasta && dFecha && dFecha > new Date(fHasta)) matchDate = false;
+                    }
+                    return matchSearch && matchTipo && matchResp && matchKeyword && matchResponsable && matchDate;
+                });
+                renderTable(res);
+            }
+            function populateTipoDropdowns() {
+                const opts = TIPOS.map(t => `<option value="${t}">${t}</option>`).join('');
+                els.fTipo.innerHTML = opts;
+                document.getElementById('filterTipo-rec').innerHTML = `<option value="">Todos</option>` + opts;
+            }
+            function parseCartaNumber(cartaNum) {
+                if (!cartaNum) return { year: new Date().getFullYear().toString(), num: '' };
+                const match = cartaNum.match(/Carta N°\s*(\d+)-MATE-(\d{4})JS-LVL/i);
+                if (match) return { year: match[2], num: match[1] };
+                return { year: new Date().getFullYear().toString(), num: cartaNum };
+            }
+            function combineCartaNumber(year, num) { return `Carta N° ${num}-MATE-${year}JS-LVL`; }
+            function parseNumDocNumber(numDoc) {
+                if (!numDoc) return { year: new Date().getFullYear().toString(), num: '' };
+                const match = numDoc.match(/Carta N° PA-MAN-(\d{4})-(.+)/i);
+                if (match) return { year: match[1], num: match[2] };
+                return { year: new Date().getFullYear().toString(), num: numDoc };
+            }
+            function combineNumDocNumber(year, num) { return `Carta N° PA-MAN-${year}-${num}`; }
+            function openModal(idx = -1) {
+                els.modal.style.display = 'flex';
+                document.getElementById('modalTitle-rec').textContent = idx === -1 ? 'Nueva Carta Recibida' : 'Editar Carta Recibida';
+                els.editIndex.value = idx;
+                els.form.reset();
+                els.numDocStructured.style.display = 'flex';
+                els.numDocManual.style.display = 'none';
+                els.btnToggleNumDoc.textContent = '✏️';
+
+                if (idx !== -1) {
+                    const d = documentos[idx];
+                    const parsedCarta = parseCartaNumber(d.numeroCarta);
+                    els.fCartaNum.value = parsedCarta.num;
+                    els.fCartaYear.value = parsedCarta.year;
+                    const parsedNumDoc = parseNumDocNumber(d.numDocumento);
+                    if (parsedNumDoc.num !== d.numDocumento) {
+                        els.fNumDocYear.value = parsedNumDoc.year;
+                        els.fNumDocNum.value = parsedNumDoc.num;
+                        els.numDocManual.value = '';
+                    } else {
+                        els.fNumDocYear.value = '2026';
+                        els.fNumDocNum.value = '';
+                        els.numDocManual.value = d.numDocumento || '';
+                        if (d.numDocumento) {
+                            els.numDocStructured.style.display = 'none';
+                            els.numDocManual.style.display = 'block';
+                            els.btnToggleNumDoc.textContent = '↩️';
+                        }
+                    }
+                    if (d.fecha) els.fFecha.value = parseDateForInput(d.fecha);
+                    else els.fFecha.value = '';
+                    els.fAsunto.value = d.asunto || '';
+                    els.fTipo.value = d.tipo || '';
+                    els.fReferencia.value = d.referencia || '';
+                    els.fRespuesta.value = d.respuesta || 'NA';
+                    if (d.fechaResp) els.fFechaResp.value = parseDateForInput(d.fechaResp);
+                    else els.fFechaResp.value = '';
+                    const dFecha = getDateObject(d.fecha);
+                    const dFechaResp = getDateObject(d.fechaResp);
+                    let demoraCalc = 0;
+                    if (dFecha && dFechaResp) demoraCalc = Math.floor((dFechaResp - dFecha) / (1000 * 60 * 60 * 24));
+                    els.fDemora.value = demoraCalc;
+                    els.fComentario.value = d.comentario || '';
+                    els.fResponsable.value = d.responsable || '';
+                    els.linkCarta.value = d.linkCarta || '';
+                    els.linkCarpeta.value = d.linkCarpeta || '';
+                } else {
+                    els.fFecha.valueAsDate = new Date();
+                    const currentYear = new Date().getFullYear().toString();
+                    els.fCartaYear.value = currentYear;
+                    els.fNumDocYear.value = currentYear;
+                }
+                els.cartaModeFull.checked = true;
+                els.cartaModeStructured.checked = false;
+                if (idx !== -1) els.cartaManual.value = documentos[idx].numeroCarta || '';
+                else els.cartaManual.value = '';
+                const rowS = document.getElementById('cartaModeRowStructured-rec');
+                const rowF = document.getElementById('cartaModeRowFull-rec');
+                if (rowS) rowS.classList.add('is-inactive');
+                if (rowF) rowF.classList.remove('is-inactive');
+            }
+            function closeModal() { els.modal.style.display = 'none'; }
+            function saveForm(e) {
+                e.preventDefault();
+                const idx = parseInt(els.editIndex.value);
+                let numeroCarta;
+                if (els.cartaModeFull.checked) {
+                    numeroCarta = els.cartaManual.value.trim();
+                    if (!numeroCarta) { alert('Por favor ingrese el N° Carta (texto completo en la segunda fila).'); return; }
+                } else {
+                    const num = els.fCartaNum.value.trim();
+                    const year = els.fCartaYear.value;
+                    if (!num) { alert('Por favor ingrese el número de carta (formato estructurado).'); return; }
+                    numeroCarta = combineCartaNumber(year, num);
+                }
+                let numDocumento;
+                if (els.numDocManual.style.display === 'block' && els.numDocManual.value.trim()) numDocumento = els.numDocManual.value.trim();
+                else { const num = els.fNumDocNum.value.trim(); const year = els.fNumDocYear.value; if (!num) { alert('Por favor ingrese el número de documento.'); return; } numDocumento = combineNumDocNumber(year, num); }
+                const newDoc = {
+                    item: idx !== -1 ? documentos[idx].item : (documentos.length + 1),
+                    numeroCarta: numeroCarta, fecha: els.fFecha.value,
+                    asunto: els.fAsunto.value.trim(), tipo: els.fTipo.value,
+                    referencia: els.fReferencia.value.trim(), respuesta: els.fRespuesta.value,
+                    numDocumento: numDocumento, fechaResp: els.fFechaResp.value,
+                    comentario: els.fComentario.value.trim(), responsable: els.fResponsable.value.trim(),
+                    linkCarta: els.linkCarta.value.trim(), linkCarpeta: els.linkCarpeta.value.trim()
+                };
+                if (idx === -1) documentos.push(newDoc); else documentos[idx] = newDoc;
+                saveData(); renderTable(); applyFilters(); closeModal();
+            }
+            function editDoc(idx) { openModal(idx); }
+            function deleteDoc(idx) { if (confirm('¿Eliminar este registro permanentemente?')) { documentos.splice(idx, 1); saveData(); renderTable(); applyFilters(); } }
+            
+            function importExcel(e) {
+                console.log('📥 Import Excel llamado - Recibidas');
+                const file = e.target.files[0];
+                if (!file) {
+                    console.warn('No se seleccionó archivo');
+                    return;
+                }
+                
+                console.log('Archivo seleccionado:', file.name);
+                
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    try {
+                        console.log('Leyendo archivo...');
+                        const data = new Uint8Array(evt.target.result);
+                        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                        console.log('Workbook cargado:', workbook.SheetNames);
+                        
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
+                        console.log('Datos JSON:', jsonData.length, 'filas');
+                        
+                        if (jsonData.length < 2) { 
+                            alert('Archivo vacío'); 
+                            return; 
+                        }
+                        
+                        let startRow = 0;
+                        for (let i = 0; i < Math.min(10, jsonData.length); i++) {
+                            if (jsonData[i] && jsonData[i].some(cell => String(cell).includes('N° DE CARTA') || String(cell).includes('ÍTEM'))) { 
+                                startRow = i; 
+                                break; 
+                            }
+                        }
+                        
+                        const headers = jsonData[startRow].map(h => String(h).trim().toUpperCase());
+                        console.log('Headers:', headers);
+                        
+                        const colIndex = {
+                            item: headers.findIndex(h => h.includes('ÍTEM')), 
+                            numeroCarta: headers.findIndex(h => h.includes('N° DE CARTA')),
+                            asunto: headers.findIndex(h => h.includes('ASUNTO')), 
+                            fecha: headers.findIndex(h => h === 'FECHA'),
+                            tipo: headers.findIndex(h => h === 'TIPO'), 
+                            referencia: headers.findIndex(h => h.includes('REFERENCIA')),
+                            respuesta: headers.findIndex(h => h === 'RESPUESTA'), 
+                            numDocumento: headers.findIndex(h => h.includes('N° DE DOCUMENTO')),
+                            fechaResp: headers.findIndex(h => h.includes('FECHA2') || h.includes('FECHA RESP')),
+                            demora: headers.findIndex(h => h === 'DEMORA'), 
+                            comentario: headers.findIndex(h => h.includes('COMENTARIO')),
+                            responsable: headers.findIndex(h => h.includes('RESPONSABLE'))
+                        };
+                        
+                        console.log('Índices de columnas:', colIndex);
+                        
+                        let imported = 0;
+                        for (let i = startRow + 1; i < jsonData.length; i++) {
+                            const row = jsonData[i]; 
+                            if (!row || row.length === 0) continue;
+                            
+                            const numeroCarta = getValue(row, colIndex.numeroCarta); 
+                            if (!numeroCarta) continue;
+                            
+                            documentos.push({
+                                item: parseInt(getValue(row, colIndex.item)) || imported + 1, 
+                                numeroCarta: numeroCarta,
+                                fecha: parseDatePeru(getValue(row, colIndex.fecha)), 
+                                asunto: getValue(row, colIndex.asunto),
+                                tipo: getValue(row, colIndex.tipo) || 'OTROS', 
+                                referencia: getValue(row, colIndex.referencia),
+                                respuesta: (getValue(row, colIndex.respuesta) || 'NA').toUpperCase().trim(), 
+                                numDocumento: getValue(row, colIndex.numDocumento),
+                                fechaResp: parseDatePeru(getValue(row, colIndex.fechaResp)), 
+                                comentario: getValue(row, colIndex.comentario),
+                                responsable: getValue(row, colIndex.responsable), 
+                                linkCarta: '', 
+                                linkCarpeta: ''
+                            });
+                            imported++;
+                        }
+                        
+                        console.log('Registros importados:', imported);
+                        
+                        if (imported > 0) { 
+                            saveData(); 
+                            renderTable(); 
+                            applyFilters(); 
+                            alert(`✅ Importados: ${imported} registros`); 
+                        } else {
+                            alert('⚠️ No se importaron registros. Verifique el formato del archivo.');
+                        }
+                    } catch (err) { 
+                        console.error('Error en importExcel:', err);
+                        alert('❌ Error: ' + err.message); 
+                    }
+                    e.target.value = '';
+                };
+                reader.onerror = function() {
+                    console.error('Error leyendo archivo');
+                    alert('❌ Error al leer el archivo');
+                };
+                reader.readAsArrayBuffer(file);
+            }
+            
+            function getValue(row, index) { 
+                if (index < 0 || index >= row.length) return ''; 
+                const val = row[index]; 
+                if (val === null || val === undefined) return ''; 
+                return String(val).trim(); 
+            }
+            
+            function exportExcel() {
+                if (documentos.length === 0) return alert('No hay datos');
+                const wb = XLSX.utils.book_new();
+                const hoy = new Date(); hoy.setHours(0,0,0,0);
+                const data = documentos.map(d => {
+                    let demora = 0; const dFecha = getDateObject(d.fecha); const dFechaResp = getDateObject(d.fechaResp);
+                    if (dFecha && dFechaResp) demora = Math.floor((dFechaResp - dFecha) / (1000 * 60 * 60 * 24));
+                    let demoraHoy = 0; if (d.respuesta === 'NO' && dFecha) demoraHoy = Math.floor((hoy - dFecha) / (1000 * 60 * 60 * 24));
+                    return {
+                        'ÍTEM': d.item, 'N° DE CARTA': d.numeroCarta, 'ASUNTO': d.asunto, 'FECHA': formatDatePeru(d.fecha), 'TIPO': d.tipo,
+                        'REFERENCIA': d.referencia, 'RESPUESTA': d.respuesta, 'N° DE DOCUMENTO': d.numDocumento,
+                        'FECHA RESP.': formatDatePeru(d.fechaResp), 'DEMORA': demora, 'DEMORA A HOY': demoraHoy,
+                        'COMENTARIO': d.comentario, 'RESPONSABLE': d.responsable, 
+                        'Link Carta': d.linkCarta || '', 'Link Carpeta': d.linkCarpeta || ''
+                    };
+                });
+                const ws = XLSX.utils.json_to_sheet(data, {skipHeader: false});
+                ws['!cols'] = [{wch: 6}, {wch: 35}, {wch: 55}, {wch: 12}, {wch: 22}, {wch: 35}, {wch: 12}, {wch: 40}, {wch: 12}, {wch: 10}, {wch: 14}, {wch: 70}, {wch: 25}, {wch: 50}, {wch: 50}];
+                XLSX.utils.book_append_sheet(wb, ws, "Cartas_Recibidas");
+                const infoData = [['MATRIZ DE CONTROL DE CARTAS - RECIBIDAS'],['SUPERVISIÓN:', 'TERRANDES S.A.C'],['CONTRATISTA:', 'P.A PERÚ S.A.C'],['RESPONSABLE:', 'Ing. Luis Deybis Aponte Primo'],['AÑO:', '2026'],['FECHA EXPORTACIÓN:', new Date().toLocaleString('es-PE')],['TOTAL REGISTROS:', documentos.length]];
+                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(infoData), "Información");
+                XLSX.writeFile(wb, `Cartas_Recibidas_SEMA_${new Date().toISOString().split('T')[0]}.xlsx`);
+            }
+            async function saveDB() {
+                const payload = { timestamp: new Date().toISOString(), version: "1.0", documentos: documentos };
+                const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
+                const fileName = `Cartas_Recibidas_DB_${new Date().toISOString().slice(0,10)}.json`;
+                try {
+                    if (window.showSaveFilePicker) {
+                        const handle = await window.showSaveFilePicker({ suggestedName: fileName, types: [{ description: 'JSON Database', accept: { 'application/json': ['.json'] } }] });
+                        const writable = await handle.createWritable();
+                        await writable.write(blob);
+                        await writable.close();
+                    } else {
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url; a.download = fileName; a.style.display = 'none';
+                        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    }
+                    const now = new Date().toLocaleString('es-PE');
+                    els.lastSaved.textContent = `Último guardado: ${now}`;
+                    localStorage.setItem('lastSavedTimeRec', now);
+                } catch (err) { if (err.name !== 'AbortError') alert('❌ Error al guardar: ' + err.message); }
+            }
+            function loadDB(event) {
+                const file = event.target.files[0]; if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const payload = JSON.parse(e.target.result);
+                        if (payload && Array.isArray(payload.documentos)) {
+                            documentos = payload.documentos;
+                            saveData(); renderTable(); updateStats(); updateResponsablesFilter();
+                            const loadTime = payload.timestamp ? new Date(payload.timestamp).toLocaleString('es-PE') : new Date().toLocaleString('es-PE');
+                            els.lastLoaded.textContent = `Última carga: ${loadTime}`;
+                            localStorage.setItem('lastLoadedTimeRec', loadTime);
+                            alert(`✅ Base de datos cargada.\n📅 Fecha: ${loadTime}\n📊 Registros: ${documentos.length}`);
+                        } else { alert('❌ Formato inválido.'); }
+                    } catch (err) { alert('❌ Error: ' + err.message); }
+                };
+                reader.readAsText(file);
+                event.target.value = '';
+            }
+            window.onclick = (e) => { if (e.target.id === 'modal-rec') closeModal(); };
+
+            return { 
+                init, 
+                editDoc, 
+                deleteDoc, 
+                openModal: openModal, 
+                closeModal: closeModal, 
+                exportExcel: exportExcel, 
+                saveDB: saveDB, 
+                filterByTotal: filterByTotal, 
+                toggleFilters: toggleFilters, 
+                applyFilters: applyFilters,
+                importExcel: importExcel,
+                renderTable: renderTable,
+                _getDocumentosForExport: function() { return documentos; },
+                _loadDocumentosFromImport: function(data) {
+                    documentos = Array.isArray(data) ? data : [];
+                    saveData(); renderTable(); updateStats(); updateResponsablesFilter();
+                }
+            };
+        })();
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', () => {
+            Env.init();
+            Rec.init();
+            updateUIBasedOnRole(); // Aplicar estado inicial (Local)
+        });
+
+    </script>
+</body>
+</html>
